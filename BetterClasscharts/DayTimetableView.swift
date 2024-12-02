@@ -18,7 +18,7 @@ struct DayTimetableView: View {
                         .foregroundColor(.gray)
                         .padding()
                 } else {
-                    ForEach(lessons) { lesson in
+                    ForEach(lessons, id: \.id) { lesson in
                         VStack(alignment: .leading) {
                             let periodDisplayName = lesson.periodName.replacingOccurrences(of: "(monday 2)", with: "")
                             
