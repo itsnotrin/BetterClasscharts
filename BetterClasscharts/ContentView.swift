@@ -50,76 +50,42 @@ struct ContentView: View {
                     isLoading = true
                     errorMessage = nil
                     
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "dd-MM-yyyy"
-                    let formattedDate = formatter.string(from: dateOfBirth)
-                    print("DOB: \(formattedDate)")
-                    print("Pupil Code: \(pupilCode)")
-                    print("Making request to ClassCharts API...")
-                    
-                    guard let url = URL(string: "https://www.classcharts.com/apiv2student/ping") else {
-                        errorMessage = "Invalid URL"
-                        print("Error: Invalid URL")
-                        return
-                    }
-                    
-                    var request = URLRequest(url: url)
-                    request.httpMethod = "POST"
-                    request.setValue("Basic YOURTOKENHERE", forHTTPHeaderField: "Authorization")
-                    request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-                    request.setValue("cc-session=YOURCOOKIEHERE", forHTTPHeaderField: "Cookie")
-                    
-                    URLSession.shared.dataTask(with: request) { data, response, error in
+                    StudentClient.login(dateOfBirth: dateOfBirth, pupilCode: pupilCode) { result in
                         DispatchQueue.main.async {
                             isLoading = false
                             
-                            if let error = error {
-                                errorMessage = "Network error: \(error.localizedDescription)"
-                                print("Network error: \(error.localizedDescription)")
-                                return
-                            }
-                            
-                            guard let httpResponse = response as? HTTPURLResponse else {
-                                errorMessage = "Invalid response"
-                                print("Error: Invalid response")
-                                return
-                            }
-                            
-                            print("Response status code: \(httpResponse.statusCode)")
-                            
-                            if !(200...299).contains(httpResponse.statusCode) {
-                                errorMessage = "Server error: \(httpResponse.statusCode)"
-                                print("Server error: \(httpResponse.statusCode)")
-                                return
-                            }
-                            
-                            if let data = data {
-                                do {
-                                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                                        if let data = json["data"] as? [String: Any],
-                                           let user = data["user"] as? [String: Any] {
-                                            print("Response JSON:", user)
-                                            if let lastName = user["last_name"] as? String {
-                                                //studentName = user["first_name"] as? String ?? "" + " " + lastName
-                                                studentName = user["name"] as? String ?? ""
-                                                navigateToWelcome = true
-                                            } else {
-                                                errorMessage = "Could not find user's last name"
-                                                print("Error: last_name not found in response")
-                                            }
-                                        }
+                            switch result {
+                            case .success(let firstName):
+                                StudentClient.saveCredentials(pupilCode: pupilCode, dateOfBirth: dateOfBirth)
+                                studentName = firstName
+                                navigateToWelcome = true
+                            case .failure(let error):
+                                StudentClient.clearSavedCredentials()
+                                if let networkError = error as? NetworkError {
+                                    switch networkError {
+                                    case .incorrectDOB:
+                                        errorMessage = "The date of birth you provided is incorrect"
+                                    case .incorrectCode:
+                                        errorMessage = "Invalid Login Code"
+                                    case .invalidCredentials:
+                                        errorMessage = "Invalid credentials"
+                                    case .invalidURL:
+                                        errorMessage = "Invalid URL"
+                                    case .invalidResponse:
+                                        errorMessage = "Invalid response"
+                                    case .serverError(let code):
+                                        errorMessage = "Server error: \(code)"
+                                    case .noData:
+                                        errorMessage = "Could not read response data"
+                                    case .missingUserData:
+                                        errorMessage = "Could not find user's name"
                                     }
-                                } catch {
-                                    errorMessage = "Could not parse response data"
-                                    print("JSON parsing error:", error)
+                                } else {
+                                    errorMessage = error.localizedDescription
                                 }
-                            } else {
-                                errorMessage = "Could not read response data"
-                                print("Error: Could not read response data")
                             }
                         }
-                    }.resume()
-                    
+                    }
                 }) {
                     if isLoading {
                         ProgressView()
@@ -133,20 +99,31 @@ struct ContentView: View {
             .padding()
             .background(colorScheme == .dark ? Color(.systemBackground) : .white)
             .navigationDestination(isPresented: $navigateToWelcome) {
-                WelcomeView(studentName: studentName)
+                HomeScreen(studentName: studentName)
+            }
+        }
+        .onAppear {
+            if let saved = StudentClient.getSavedCredentials() {
+                dateOfBirth = saved.dateOfBirth
+                pupilCode = saved.pupilCode
+                attemptAutoLogin(dateOfBirth: saved.dateOfBirth, pupilCode: saved.pupilCode)
             }
         }
     }
-}
-
-struct WelcomeView: View {
-    let studentName: String
     
-    var body: some View {
-        VStack {
-            Text("Welcome \(studentName)")
-                .font(.largeTitle)
-                .padding()
+    private func attemptAutoLogin(dateOfBirth: Date, pupilCode: String) {
+        isLoading = true
+        StudentClient.login(dateOfBirth: dateOfBirth, pupilCode: pupilCode) { result in
+            DispatchQueue.main.async {
+                isLoading = false
+                switch result {
+                case .success(let firstName):
+                    studentName = firstName
+                    navigateToWelcome = true
+                case .failure:
+                    StudentClient.clearSavedCredentials()
+                }
+            }
         }
     }
 }
