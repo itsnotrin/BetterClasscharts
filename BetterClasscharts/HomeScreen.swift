@@ -33,7 +33,7 @@ struct HomeScreen: View {
                 await refreshHomework()
             }
             .background(
-                NavigationLink(destination: DayTimetableView(day: selectedDay ?? "", lessons: lessons), isActive: $navigateToDayTimetable) {
+                NavigationLink(destination: DayTimetableView(day: selectedDay ?? "", lessons: lessons, selectedDay: $selectedDay), isActive: $navigateToDayTimetable) {
                     EmptyView()
                 }
             )
@@ -49,7 +49,8 @@ struct HomeScreen: View {
     private var welcomeHeader: some View {
         Text("Welcome \(studentName.processHTML())")
             .font(.title)
-            .padding()
+            .padding(.horizontal)
+            .padding(.top)
     }
     
     private var homeworkSection: some View {
@@ -58,7 +59,7 @@ struct HomeScreen: View {
             content: { homeworkContent },
             label: { homeworkLabel }
         )
-        .padding()
+        .padding(.horizontal)
     }
     
     private var homeworkContent: some View {
@@ -85,14 +86,7 @@ struct HomeScreen: View {
                 NavigationLink(destination: HomeworkDetailView(homework: task)) {
                     HomeworkListItemView(task: task) { newState in
                         if let index = homeworkTasks.firstIndex(where: { $0.id == task.id }) {
-                            homeworkTasks[index] = HomeworkTask(
-                                id: task.id,
-                                title: task.title,
-                                subject: task.subject,
-                                dueDate: task.dueDate,
-                                description: task.description,
-                                completed: newState
-                            )
+                            homeworkTasks[index].completed = newState // Update the completed state directly
                         }
                     }
                 }
@@ -110,6 +104,7 @@ struct HomeScreen: View {
                 ProgressView()
             }
         }
+        .padding(.horizontal)
     }
     
     private var timetableSection: some View {
@@ -117,20 +112,23 @@ struct HomeScreen: View {
             isExpanded: $isTimetableExpanded,
             content: {
                 VStack {
-                    HStack {
-                        ForEach(["Mon", "Tue", "Wed", "Thu", "Fri"], id: \.self) { day in
+                    VStack(spacing: 10) {
+                        ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], id: \.self) { day in
                             Button(action: {
                                 loadTimetable(for: day)  // Load the timetable for the selected day
                             }) {
                                 Text(day)
-                                    .frame(width: 30, height: 30)
-                                    .background(selectedDay == day ? Color.blue : Color.gray)
+                                    .font(.title2)
+                                    .frame(maxWidth: .infinity, minHeight: 50)
+                                    .background(selectedDay == day ? Color.blue.opacity(0.7) : Color.gray.opacity(0.5))
                                     .foregroundColor(.white)
-                                    .cornerRadius(5)
+                                    .cornerRadius(12)
+                                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                                    .padding(5)
                             }
                         }
                     }
-                    .padding()
+                    .padding(.horizontal)
                     
                     if isLoadingLessons {
                         ProgressView()
@@ -140,6 +138,7 @@ struct HomeScreen: View {
             label: {
                 Text("Timetable")
                     .font(.headline)
+                    .padding(.horizontal)
             }
         )
         .padding()
@@ -155,15 +154,15 @@ struct HomeScreen: View {
         var components = calendar.dateComponents([.year, .month, .day], from: today)
         
         switch day {
-        case "Mon":
+        case "Monday":
             components.weekday = 2 // Monday
-        case "Tue":
+        case "Tuesday":
             components.weekday = 3 // Tuesday
-        case "Wed":
+        case "Wednesday":
             components.weekday = 4 // Wednesday
-        case "Thu":
+        case "Thursday":
             components.weekday = 5 // Thursday
-        case "Fri":
+        case "Friday":
             components.weekday = 6 // Friday
         default:
             break

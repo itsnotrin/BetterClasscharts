@@ -26,37 +26,29 @@ struct HomeworkListItemView: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
-            if isLoading {
-                ProgressView()
-            } else {
-                Button(action: toggleCompletion) {
-                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(isCompleted ? .green : .gray)
+            Button(action: {
+                isLoading = true
+                isCompleted.toggle()
+                onCompletionToggled(isCompleted)
+                StudentClient.toggleHomeworkCompletion(homeworkId: task.id, completed: isCompleted) { result in
+                    isLoading = false
+                    switch result {
+                    case .success(let newState):
+                        print("Homework marked as \(newState ? "done" : "not done")")
+                    case .failure(let error):
+                        print("Error marking homework: \(error)")
+                    }
                 }
+            }) {
+                Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(isCompleted ? .green : .gray)
+                    .font(.title)
             }
-            Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
+            .disabled(isLoading)
         }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(radius: 1)
-    }
-    
-    private func toggleCompletion() {
-        isLoading = true
-        StudentClient.toggleHomeworkCompletion(homeworkId: task.id, completed: isCompleted) { result in
-            DispatchQueue.main.async {
-                isLoading = false
-                switch result {
-                case .success(let newState):
-                    isCompleted = newState
-                    onCompletionToggled(newState)
-                case .failure:
-                    // You might want to show an error message here
-                    break
-                }
-            }
-        }
     }
 } 

@@ -3,6 +3,7 @@ import SwiftUI
 struct DayTimetableView: View {
     let day: String
     let lessons: [Lesson]
+    @Binding var selectedDay: String?
     
     var body: some View {
         ScrollView {
@@ -19,7 +20,9 @@ struct DayTimetableView: View {
                 } else {
                     ForEach(lessons) { lesson in
                         VStack(alignment: .leading) {
-                            Text(lesson.title)
+                            let periodDisplayName = lesson.periodName.replacingOccurrences(of: "(monday 2)", with: "")
+                            
+                            Text(periodDisplayName) // Display the modified period name
                                 .font(.headline)
                             Text(lesson.subject)
                                 .font(.subheadline)
@@ -36,8 +39,10 @@ struct DayTimetableView: View {
                                 .font(.caption)
                         }
                         .padding()
+                        .frame(maxWidth: .infinity)
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                         .padding(.horizontal)
                     }
                 }
@@ -45,6 +50,9 @@ struct DayTimetableView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            selectedDay = nil // Reset the selected day when navigating back
+        }
     }
     
     // Helper function to format time

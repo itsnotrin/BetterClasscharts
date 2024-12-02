@@ -6,7 +6,7 @@ struct HomeworkTask: Identifiable {
     let subject: String
     let dueDate: Date
     let description: String
-    let completed: Bool
+    var completed: Bool
 }
 
 struct Lesson: Identifiable {
@@ -17,4 +17,5 @@ struct Lesson: Identifiable {
     let endTime: String
     let teacherName: String
     let roomName: String
+    let periodName: String
 } 

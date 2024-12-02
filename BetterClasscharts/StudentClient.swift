@@ -345,7 +345,7 @@ class StudentClient {
     }
     
     static func toggleHomeworkCompletion(homeworkId: Int, completed: Bool, completion: @escaping (Result<Bool, Error>) -> Void) {
-        print("Attempting to mark homework \(homeworkId) as \(completed ? "not done" : "done")")
+        print("Attempting to mark homework \(homeworkId) as \(completed ? "done" : "not done")")
         
         checkAndRefreshSession { result in
             switch result {
@@ -356,7 +356,8 @@ class StudentClient {
                     return
                 }
                 
-                guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworkticked/\(homeworkId)") else {
+                // Construct the URL for the request
+                guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworkticked/\(homeworkId)?pupil_id=\(studentId ?? 0)&value=\(completed ? "yes" : "no")") else {
                     print("Failed to create URL for homework toggle")
                     completion(.failure(NetworkError.invalidURL))
                     return
@@ -365,20 +366,9 @@ class StudentClient {
                 print("Sending toggle request to server...")
                 
                 var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+                request.httpMethod = "GET" // Use GET method
                 request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
-                
-                let formData = [
-                    "value": completed ? "no" : "yes",
-                    "student_id": String(studentId ?? 0)
-                ]
-                .map { key, value in
-                    "\(key)=\(value)"
-                }
-                .joined(separator: "&")
-                
-                request.httpBody = formData.data(using: .utf8)
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 
                 let task = URLSession.shared.dataTask(with: request) { data, response, error in
                     if let error = error {
@@ -460,10 +450,11 @@ class StudentClient {
                               let startTime = lessonDict["start_time"] as? String,
                               let endTime = lessonDict["end_time"] as? String,
                               let teacherName = lessonDict["teacher_name"] as? String,
-                              let roomName = lessonDict["room_name"] as? String else {
+                              let roomName = lessonDict["room_name"] as? String,
+                              let periodName = lessonDict["period_name"] as? String else {
                             return nil
                         }
-                        return Lesson(id: id, title: title, subject: subject, startTime: startTime, endTime: endTime, teacherName: teacherName, roomName: roomName)
+                        return Lesson(id: id, title: title, subject: subject, startTime: startTime, endTime: endTime, teacherName: teacherName, roomName: roomName, periodName: periodName)
                     }
                     
                     completion(.success(lessons))
