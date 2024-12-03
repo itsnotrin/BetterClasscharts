@@ -135,6 +135,8 @@ struct ContentView: View {
                             errorMessage = "Could not read response data"
                         case .missingUserData:
                             errorMessage = "Could not find user's name"
+                        case .sessionExpired:
+                            errorMessage = "Session expired, please try again"
                         }
                     } else {
                         errorMessage = error.localizedDescription
@@ -157,6 +159,15 @@ struct ContentView: View {
                     StudentClient.clearSavedCredentials()
                 }
             }
+        }
+    }
+    
+    private func getPreferredColorScheme() -> ColorScheme? {
+        switch appTheme {
+        case .light, .catppuccinLatte:
+            return .light
+        case .dark, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
+            return .dark
         }
     }
 }

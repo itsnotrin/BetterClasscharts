@@ -18,14 +18,16 @@ struct Lesson: Identifiable {
     let endTime: String
     let teacherName: String
     let roomName: String
-    
-    init(apiId: Int, title: String, subject: String, startTime: String, endTime: String, teacherName: String, roomName: String) {
-        self.apiId = apiId
-        self.title = title
-        self.subject = subject
-        self.startTime = startTime
-        self.endTime = endTime
-        self.teacherName = teacherName
-        self.roomName = roomName
+}
+
+// Helper for parsing JSON
+enum JSONParser {
+    static func parseResponse(_ data: Data) throws -> [[String: Any]] {
+        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        if let dict = json as? [String: Any],
+           let data = dict["data"] as? [[String: Any]] {
+            return data
+        }
+        throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Invalid JSON structure"))
     }
 } 

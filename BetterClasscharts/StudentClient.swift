@@ -258,225 +258,247 @@ class StudentClient {
         defaults.removeObject(forKey: DOB_KEY)
     }
     
+    private static func retryRequestIfNeeded<T>(
+        completion: @escaping (Result<T, Error>) -> Void,
+        request: @escaping (@escaping (Result<T, Error>) -> Void) -> Void
+    ) {
+        request { result in
+            if case .failure(let error) = result,
+               let networkError = error as? NetworkError,
+               networkError == .sessionExpired {
+                // Session expired, refresh and retry once
+                checkAndRefreshSession { refreshResult in
+                    switch refreshResult {
+                    case .success:
+                        // Token refreshed, retry the original request
+                        request(completion)
+                    case .failure(let refreshError):
+                        // Token refresh failed, return the error
+                        completion(.failure(refreshError))
+                    }
+                }
+            } else {
+                // Not a session expiration or second attempt, return the result
+                completion(result)
+            }
+        }
+    }
+    
+    private static func handleResponse(data: Data, completion: @escaping (Result<[[String: Any]], Error>) -> Void) {
+        do {
+            // First try to parse as error response
+            if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+               let success = json["success"] as? Int,
+               let expired = json["expired"] as? Int,
+               success == 0 && expired == 1 {
+                completion(.failure(NetworkError.sessionExpired))
+                return
+            }
+            
+            // Parse the response
+            let responseData = try JSONParser.parseResponse(data)
+            completion(.success(responseData))
+        } catch {
+            completion(.failure(error))
+        }
+    }
+    
     static func fetchHomework(completion: @escaping (Result<[HomeworkTask], Error>) -> Void) {
-        checkAndRefreshSession { result in
-            switch result {
-            case .success:
-                guard let sessionId = currentSessionId else {
-                    completion(.failure(NetworkError.invalidCredentials))
-                    return
-                }
-                
-                guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworks") else {
-                    completion(.failure(NetworkError.invalidURL))
-                    return
-                }
-                
-                var request = URLRequest(url: url)
-                request.httpMethod = "GET"
-                request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
-                
-                let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        print("Network error:", error)
-                        completion(.failure(error))
+        retryRequestIfNeeded(completion: completion) { completion in
+            checkAndRefreshSession { result in
+                switch result {
+                case .success:
+                    guard let sessionId = currentSessionId else {
+                        completion(.failure(NetworkError.invalidCredentials))
                         return
                     }
                     
-                    guard let data = data else {
-                        print("No data received")
-                        completion(.failure(NetworkError.noData))
+                    guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworks") else {
+                        completion(.failure(NetworkError.invalidURL))
                         return
                     }
                     
-                    print("Raw response:", String(data: data, encoding: .utf8) ?? "Could not decode data")
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
                     
-                    guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-                        print("Failed to parse JSON")
-                        completion(.failure(NetworkError.missingUserData))
-                        return
-                    }
-                    
-                    guard let homeworks = json["data"] as? [[String: Any]] else {
-                        print("No homework data found in response")
-                        completion(.failure(NetworkError.missingUserData))
-                        return
-                    }
-                    
-                    print("Found \(homeworks.count) homework items")
-                    let tasks = homeworks.compactMap { homework -> HomeworkTask? in
-                        guard let id = homework["id"] as? Int,
-                              let title = homework["title"] as? String,
-                              let subject = homework["subject"] as? String,
-                              let dueDateString = homework["due_date"] as? String,
-                              let description = homework["description"] as? String,
-                              let status = homework["status"] as? [String: Any],
-                              let completed = status["ticked"] as? String else {
-                            print("Failed to extract fields from homework:", homework)
-                            return nil
+                    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
                         }
                         
-                        let dateFormatter = DateFormatter()
-                        dateFormatter.dateFormat = "yyyy-MM-dd"
-                        if let dueDate = dateFormatter.date(from: dueDateString) {
-                            print("Successfully parsed homework: \(title)")
-                            return HomeworkTask(
-                                id: id,
-                                title: title,
-                                subject: subject,
-                                dueDate: dueDate,
-                                description: description,
-                                completed: completed == "yes"
-                            )
-                        } else {
-                            print("Failed to parse date: \(dueDateString)")
-                            return nil
+                        guard let data = data else {
+                            completion(.failure(NetworkError.noData))
+                            return
+                        }
+                                                
+                        handleResponse(data: data) { result in
+                            switch result {
+                            case .success(let homeworks):
+                                let tasks = homeworks.compactMap { homework -> HomeworkTask? in
+                                    guard let id = homework["id"] as? Int,
+                                          let title = homework["title"] as? String,
+                                          let subject = homework["subject"] as? String,
+                                          let dueDateString = homework["due_date"] as? String,
+                                          let description = homework["description"] as? String,
+                                          let status = homework["status"] as? [String: Any],
+                                          let completed = status["ticked"] as? String else {
+                                        return nil
+                                    }
+                                    
+                                    let dateFormatter = DateFormatter()
+                                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                                    if let dueDate = dateFormatter.date(from: dueDateString) {
+                                        return HomeworkTask(
+                                            id: id,
+                                            title: title,
+                                            subject: subject,
+                                            dueDate: dueDate,
+                                            description: description,
+                                            completed: completed == "yes"
+                                        )
+                                    }
+                                    return nil
+                                }
+                                completion(.success(tasks))
+                            case .failure(let error):
+                                completion(.failure(error))
+                            }
                         }
                     }
-                    print("Successfully mapped \(tasks.count) tasks")
-                    completion(.success(tasks))
+                    task.resume()
+                    
+                case .failure(let error):
+                    completion(.failure(error))
                 }
-                task.resume()
-                
-            case .failure(let error):
-                completion(.failure(error))
             }
         }
     }
     
     static func toggleHomeworkCompletion(homeworkId: Int, completed: Bool, completion: @escaping (Result<Bool, Error>) -> Void) {
-        print("Attempting to mark homework \(homeworkId) as \(completed ? "done" : "not done")")
-        
-        checkAndRefreshSession { result in
-            switch result {
-            case .success:
-                guard let sessionId = currentSessionId else {
-                    print("Failed to toggle homework: No session ID")
-                    completion(.failure(NetworkError.invalidCredentials))
-                    return
-                }
-                
-                // Construct the URL for the request
-                guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworkticked/\(homeworkId)?pupil_id=\(studentId ?? 0)&value=\(completed ? "yes" : "no")") else {
-                    print("Failed to create URL for homework toggle")
-                    completion(.failure(NetworkError.invalidURL))
-                    return
-                }
-                
-                print("Sending toggle request to server...")
-                
-                var request = URLRequest(url: url)
-                request.httpMethod = "GET" // Use GET method
-                request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        print("Network error while toggling homework: \(error.localizedDescription)")
-                        completion(.failure(error))
+        retryRequestIfNeeded(completion: completion) { completion in
+            checkAndRefreshSession { result in
+                switch result {
+                case .success:
+                    guard let sessionId = currentSessionId else {
+                        completion(.failure(NetworkError.invalidCredentials))
                         return
                     }
                     
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        print("Invalid response while toggling homework")
-                        completion(.failure(NetworkError.invalidResponse))
+                    guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/homeworkticked/\(homeworkId)?pupil_id=\(studentId ?? 0)&value=\(completed ? "yes" : "no")") else {
+                        completion(.failure(NetworkError.invalidURL))
                         return
                     }
                     
-                    if httpResponse.statusCode == 200 {
-                        let newState = !completed
-                        print("Successfully marked homework \(homeworkId) as \(newState ? "done" : "not done")")
-                        completion(.success(newState))
-                    } else {
-                        print("Server error \(httpResponse.statusCode) while toggling homework")
-                        completion(.failure(NetworkError.serverError(httpResponse.statusCode)))
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    
+                    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
+                        }
+                        
+                        guard let httpResponse = response as? HTTPURLResponse else {
+                            completion(.failure(NetworkError.invalidResponse))
+                            return
+                        }
+                        
+                        if httpResponse.statusCode == 200 {
+                            let newState = !completed
+                            completion(.success(newState))
+                        } else {
+                            completion(.failure(NetworkError.serverError(httpResponse.statusCode)))
+                        }
                     }
+                    task.resume()
+                    
+                case .failure(let error):
+                    completion(.failure(error))
                 }
-                task.resume()
-                
-            case .failure(let error):
-                print("Session refresh failed while toggling homework: \(error.localizedDescription)")
-                completion(.failure(error))
             }
         }
     }
     
     static func fetchTimetable(for date: Date, completion: @escaping (Result<[Lesson], Error>) -> Void) {
-        checkAndRefreshSession { result in
-            switch result {
-            case .success:
-                guard let sessionId = currentSessionId else {
-                    completion(.failure(NetworkError.invalidCredentials))
-                    return
-                }
-                
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                let formattedDate = dateFormatter.string(from: date)
-                
-                guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/timetable/\(studentId ?? 0)?date=\(formattedDate)") else {
-                    completion(.failure(NetworkError.invalidURL))
-                    return
-                }
-                
-                var request = URLRequest(url: url)
-                request.httpMethod = "GET"
-                request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
-                
-                let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                    if let error = error {
-                        completion(.failure(error))
+        retryRequestIfNeeded(completion: completion) { completion in
+            checkAndRefreshSession { result in
+                switch result {
+                case .success:
+                    guard let sessionId = currentSessionId else {
+                        completion(.failure(NetworkError.invalidCredentials))
                         return
                     }
                     
-                    guard let data = data else {
-                        completion(.failure(NetworkError.noData))
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let formattedDate = dateFormatter.string(from: date)
+                    
+                    guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/timetable/\(studentId ?? 0)?date=\(formattedDate)") else {
+                        completion(.failure(NetworkError.invalidURL))
                         return
                     }
                     
-                    // Log the raw response for debugging
-                    print("Raw timetable response: \(String(data: data, encoding: .utf8) ?? "No data")")
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "GET"
+                    request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
                     
-                    guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                          let lessonsData = json["data"] as? [[String: Any]] else {
-                        completion(.failure(NetworkError.missingUserData))
-                        return
-                    }
-                    
-                    let lessons = lessonsData.compactMap { lessonDict -> Lesson? in
-                        guard let id = lessonDict["lesson_id"] as? Int,
-                              let title = lessonDict["lesson_name"] as? String,
-                              let subject = lessonDict["subject_name"] as? String,
-                              let startTime = lessonDict["start_time"] as? String,
-                              let endTime = lessonDict["end_time"] as? String,
-                              let teacherName = lessonDict["teacher_name"] as? String,
-                              let roomName = lessonDict["room_name"] as? String else {
-                            return nil
+                    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                        if let error = error {
+                            completion(.failure(error))
+                            return
                         }
                         
-                        return Lesson(
-                            apiId: id,
-                            title: title,
-                            subject: subject,
-                            startTime: startTime,
-                            endTime: endTime,
-                            teacherName: teacherName,
-                            roomName: roomName
-                        )
+                        guard let data = data else {
+                            completion(.failure(NetworkError.noData))
+                            return
+                        }
+                        
+                        handleResponse(data: data) { result in
+                            switch result {
+                            case .success(let lessonsData):
+                                let lessons = lessonsData.compactMap { lessonDict -> Lesson? in
+                                    guard let id = lessonDict["lesson_id"] as? Int,
+                                          let title = lessonDict["lesson_name"] as? String,
+                                          let subject = lessonDict["subject_name"] as? String,
+                                          let startTime = lessonDict["start_time"] as? String,
+                                          let endTime = lessonDict["end_time"] as? String,
+                                          let teacherName = lessonDict["teacher_name"] as? String,
+                                          let roomName = lessonDict["room_name"] as? String else {
+                                        return nil
+                                    }
+                                    
+                                    return Lesson(
+                                        apiId: id,
+                                        title: title,
+                                        subject: subject,
+                                        startTime: startTime,
+                                        endTime: endTime,
+                                        teacherName: teacherName,
+                                        roomName: roomName
+                                    )
+                                }
+                                
+                                completion(.success(lessons))
+                            case .failure(let error):
+                                completion(.failure(error))
+                            }
+                        }
                     }
+                    task.resume()
                     
-                    completion(.success(lessons))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
-                task.resume()
-                
-            case .failure(let error):
-                completion(.failure(error))
             }
         }
     }
 }
 
-enum NetworkError: Error {
+enum NetworkError: Error, Equatable {
     case invalidURL
     case invalidResponse
     case serverError(Int)
@@ -485,4 +507,23 @@ enum NetworkError: Error {
     case missingUserData
     case incorrectDOB
     case incorrectCode
+    case sessionExpired
+    
+    static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidURL, .invalidURL),
+             (.invalidResponse, .invalidResponse),
+             (.noData, .noData),
+             (.invalidCredentials, .invalidCredentials),
+             (.missingUserData, .missingUserData),
+             (.incorrectDOB, .incorrectDOB),
+             (.incorrectCode, .incorrectCode),
+             (.sessionExpired, .sessionExpired):
+            return true
+        case (.serverError(let lhsCode), .serverError(let rhsCode)):
+            return lhsCode == rhsCode
+        default:
+            return false
+        }
+    }
 }

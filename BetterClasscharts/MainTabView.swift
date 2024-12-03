@@ -69,10 +69,10 @@ struct MainTabView: View {
         StudentClient.checkAndRefreshSession { result in
             switch result {
             case .success:
-                print("Token refreshed successfully")
+                break
             case .failure(let error):
+                // If token refresh fails, we should log out and print the error
                 print("Token refresh failed: \(error)")
-                // If token refresh fails, we should log out
                 StudentClient.clearSavedCredentials()
                 dismiss()
             }
@@ -114,7 +114,7 @@ struct HomeworkView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 10)
                 
-                if isLoadingHomework {
+                if isLoadingHomework && homeworkTasks.isEmpty {
                     ProgressView()
                         .tint(Theme.accentColor(for: appTheme))
                 } else if let error = homeworkError {
@@ -137,11 +137,17 @@ struct HomeworkView: View {
                         .padding(.horizontal)
                         .padding(.vertical, 8)
                     }
+                    .refreshable {
+                        await refreshHomework()
+                    }
                 }
             }
         }
         .onAppear {
-            loadHomework()
+            // Only load if we haven't loaded any homework yet
+            if homeworkTasks.isEmpty {
+                loadHomework()
+            }
         }
     }
     
