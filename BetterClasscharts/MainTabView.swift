@@ -23,7 +23,7 @@ struct MainTabView: View {
                     Label("Settings", systemImage: "gear")
                 }
         }
-        .preferredColorScheme(getPreferredColorScheme())
+        .tint(Theme.mauve)
         .onAppear {
             startTokenRefresh()
         }
@@ -37,7 +37,7 @@ struct MainTabView: View {
         refreshToken()
         
         // Set up timer for subsequent refreshes
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 35, repeats: true) { _ in
             refreshToken()
         }
     }
@@ -79,35 +79,39 @@ struct HomeworkView: View {
     @State private var homeworkError: String?
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if isLoadingHomework {
-                    ProgressView()
-                } else if let error = homeworkError {
-                    Text(error)
-                        .foregroundColor(.red)
-                } else {
-                    List(homeworkTasks) { task in
-                        NavigationLink(destination: HomeworkDetailView(homework: task)) {
-                            HomeworkListItemView(task: task) { newState in
-                                if let index = homeworkTasks.firstIndex(where: { $0.id == task.id }) {
-                                    homeworkTasks[index].completed = newState
+        NavigationStack {
+            ZStack {
+                Theme.base.ignoresSafeArea()
+                
+                VStack {
+                    if isLoadingHomework {
+                        ProgressView()
+                            .tint(Theme.mauve)
+                    } else if let error = homeworkError {
+                        Text(error)
+                            .foregroundColor(Theme.red)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(homeworkTasks) { task in
+                                    NavigationLink(destination: HomeworkDetailView(homework: task)) {
+                                        HomeworkListItemView(task: task) { newState in
+                                            if let index = homeworkTasks.firstIndex(where: { $0.id == task.id }) {
+                                                homeworkTasks[index].completed = newState
+                                            }
+                                        }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
                         }
                     }
-                    .listStyle(.inset)
                 }
             }
             .navigationTitle("Homework")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EmptyView()
-                }
-            }
-            .refreshable {
-                await refreshHomework()
-            }
+            .navigationBarTitleTextColor(Theme.text)
         }
         .onAppear {
             loadHomework()
@@ -161,52 +165,47 @@ struct TimetableView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 10) {
-                ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], id: \.self) { day in
-                    Button(action: {
-                        loadTimetable(for: day)
-                    }) {
-                        Text(day)
-                            .font(.title2)
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                            .background(
-                                Group {
-                                    if isCurrentDay(day) {
-                                        Color(.systemBlue).opacity(0.15)
-                                    } else {
-                                        selectedDay == day ? Color.blue.opacity(0.7) : Color.gray.opacity(0.5)
+        NavigationStack {
+            ZStack {  // Add ZStack to ensure background covers entire view
+                Theme.base.ignoresSafeArea()  // Full screen background
+                
+                VStack(spacing: 10) {
+                    ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], id: \.self) { day in
+                        Button(action: {
+                            loadTimetable(for: day)
+                        }) {
+                            Text(day)
+                                .font(.title2)
+                                .frame(maxWidth: .infinity, minHeight: 50)
+                                .background(
+                                    Group {
+                                        if isCurrentDay(day) {
+                                            Theme.surface0
+                                        } else {
+                                            selectedDay == day ? Theme.mauve : Theme.surface1
+                                        }
+                                    }
+                                )
+                                .foregroundColor(Theme.text)
+                                .cornerRadius(12)
+                                .shadow(color: Theme.crust.opacity(0.2), radius: 5, x: 0, y: 2)
+                                .overlay {
+                                    if isLoadingLessons && selectedDay == day {
+                                        ProgressView()
+                                            .tint(Theme.text)
                                     }
                                 }
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
-                            .overlay {
-                                if isLoadingLessons && selectedDay == day {
-                                    ProgressView()
-                                        .tint(.white)
-                                }
-                            }
+                        }
+                        .disabled(isLoadingLessons)
                     }
-                    .disabled(isLoadingLessons)
                 }
+                .padding()
             }
-            .padding()
             .navigationTitle("Timetable")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EmptyView()
-                }
+            .navigationBarTitleTextColor(Theme.text)  // Make navigation title use theme color
+            .navigationDestination(isPresented: $navigateToDay) {
+                DayTimetableView(day: selectedDay ?? "", lessons: lessons, selectedDay: $selectedDay)
             }
-            .background(
-                NavigationLink(
-                    destination: DayTimetableView(day: selectedDay ?? "", lessons: lessons, selectedDay: $selectedDay),
-                    isActive: $navigateToDay
-                ) {
-                    EmptyView()
-                }
-            )
         }
     }
     

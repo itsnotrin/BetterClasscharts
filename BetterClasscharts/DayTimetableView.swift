@@ -75,58 +75,63 @@ struct DayTimetableView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("\(day)'s Timetable")
-                    .font(.largeTitle)
-                    .padding()
-                
-                if lessons.isEmpty {
-                    Text("No lessons for this day.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+        ZStack {  // Add ZStack for proper background layering
+            Theme.base.ignoresSafeArea()  // Full screen background
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("\(day)'s Timetable")
+                        .font(.largeTitle)
+                        .foregroundColor(Theme.text)
                         .padding()
-                } else {
-                    ForEach(uniqueLessons) { uniqueLesson in
-                        let lesson = uniqueLesson.lesson
-                        VStack(spacing: 12) {
-                            // Header row
-                            HStack {
-                                Text(getPeriodDisplay(for: lesson.startTime))
-                                    .font(.headline)
-                                Spacer()
-                                Text(lesson.subject)
-                                    .font(.headline)
-                            }
-                            
-                            // Time row
-                            HStack {
-                                Label(formatTime(from: lesson.startTime), systemImage: "clock")
-                                Text("→")
-                                Label(formatTime(from: lesson.endTime), systemImage: "clock")
-                            }
+                    
+                    if lessons.isEmpty {
+                        Text("No lessons for this day.")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            
-                            // Location and teacher row
-                            HStack {
-                                Label(lesson.roomName, systemImage: "building.2")
-                                Spacer()
-                                Label(lesson.teacherName, systemImage: "person")
+                            .foregroundColor(Theme.subtext0)
+                            .padding()
+                    } else {
+                        ForEach(lessons) { lesson in
+                            VStack(spacing: 12) {
+                                // Header row
+                                HStack {
+                                    Text(lesson.periodName)
+                                        .font(.headline)
+                                        .foregroundColor(Theme.text)
+                                    Spacer()
+                                    Text(lesson.subject)
+                                        .font(.headline)
+                                        .foregroundColor(Theme.text)
+                                }
+                                
+                                // Time row
+                                HStack {
+                                    Label(formatTime(from: lesson.startTime), systemImage: "clock")
+                                    Text("→")
+                                    Label(formatTime(from: lesson.endTime), systemImage: "clock")
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(Theme.subtext0)
+                                
+                                // Location and teacher row
+                                HStack {
+                                    Label(lesson.roomName, systemImage: "building.2")
+                                    Spacer()
+                                    Label(lesson.teacherName, systemImage: "person")
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(Theme.subtext0)
                             }
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Theme.surface0)
+                            .cornerRadius(8)
+                            .shadow(color: Theme.crust.opacity(0.1), radius: 5, x: 0, y: 2)
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
                         .padding(.horizontal)
                     }
                 }
             }
-            .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
