@@ -1,14 +1,8 @@
 import SwiftUI
 
-enum ThemeMode: String, CaseIterable {
-    case light = "Light"
-    case dark = "Dark"
-    case system = "System"
-}
-
 struct SettingsView: View {
     @AppStorage("themeMode") private var themeMode: ThemeMode = .system
-    @Environment(\.colorScheme) var systemColorScheme
+    @AppStorage("catppuccinFlavor") private var catppuccinFlavor: CatppuccinFlavor = .macchiato
     @Environment(\.dismiss) var dismiss
     @State private var showingLogoutAlert = false
     
@@ -22,6 +16,15 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    
+                    if themeMode == .catppuccin {
+                        Picker("Flavor", selection: $catppuccinFlavor) {
+                            ForEach(CatppuccinFlavor.allCases, id: \.self) { flavor in
+                                Text(flavor.rawValue)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
                 }
                 
                 Section {

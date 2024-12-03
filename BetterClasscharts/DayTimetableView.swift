@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct DayTimetableView: View {
     let day: String

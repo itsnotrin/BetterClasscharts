@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct HomeworkDetailView: View {
     let homework: HomeworkTask

@@ -1,5 +1,16 @@
 import Foundation
 
+enum NetworkError: Error {
+    case invalidURL
+    case invalidResponse
+    case serverError(Int)
+    case noData
+    case invalidCredentials
+    case missingUserData
+    case incorrectDOB
+    case incorrectCode
+}
+
 enum ClassChartsAPI {
     static let BASE_URL = "https://www.classcharts.com"
     static let API_BASE_STUDENT = "\(BASE_URL)/apiv2student"
@@ -466,15 +477,4 @@ class StudentClient {
             }
         }
     }
-}
-
-enum NetworkError: Error {
-    case invalidURL
-    case invalidResponse
-    case serverError(Int)
-    case noData
-    case invalidCredentials
-    case missingUserData
-    case incorrectDOB
-    case incorrectCode
 }
