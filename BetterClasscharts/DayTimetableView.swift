@@ -4,6 +4,8 @@ struct DayTimetableView: View {
     let day: String
     let lessons: [Lesson]
     @Binding var selectedDay: String?
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     // Define the period time ranges
     private let periodTimes: [(start: String, end: String, number: Int)] = [
@@ -14,38 +16,6 @@ struct DayTimetableView: View {
         ("13:15", "14:15", 4),
         ("14:15", "15:15", 5)
     ]
-    
-    // Create a struct to hold a lesson with a unique identifier
-    private struct UniqueLesson: Identifiable {
-        let id: String // Combine lesson id and start time for uniqueness
-        let lesson: Lesson
-        
-        init(_ lesson: Lesson) {
-            self.id = "\(lesson.id)_\(lesson.startTime)"
-            self.lesson = lesson
-        }
-    }
-    
-    // Convert lessons array to unique lessons
-    private var uniqueLessons: [UniqueLesson] {
-        lessons.map { UniqueLesson($0) }
-    }
-    
-    // Helper function to get period number based on start time
-    private func getPeriodNumber(for startTimeString: String) -> Int {
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateFormat = "HH:mm"
-        
-        guard let lessonTime = formatTimeToHHmm(from: startTimeString) else { return 1 }
-        
-        for period in periodTimes {
-            if lessonTime >= period.start && lessonTime < period.end {
-                return period.number
-            }
-        }
-        
-        return 1 // Default to period 1 if no match found
-    }
     
     // Helper function to format ISO8601 time to HH:mm
     private func formatTimeToHHmm(from dateTimeString: String) -> String? {
@@ -62,46 +32,54 @@ struct DayTimetableView: View {
         let dateFormatter = ISO8601DateFormatter()
         if let date = dateFormatter.date(from: dateTimeString) {
             let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "h:mm a" // Format to show only time
+            timeFormatter.dateFormat = "h:mm a"
             return timeFormatter.string(from: date)
         }
-        return dateTimeString // Return original if parsing fails
+        return dateTimeString
     }
     
-    // Helper function to get period display text
-    private func getPeriodDisplay(for startTimeString: String) -> String {
-        let periodNumber = getPeriodNumber(for: startTimeString)
-        return periodNumber == 0 ? "Tutor" : "Period \(periodNumber)"
+    private func getPeriodName(for startTimeString: String) -> String {
+        guard let lessonTime = formatTimeToHHmm(from: startTimeString) else { return "Unknown Period" }
+        
+        for period in periodTimes {
+            if lessonTime >= period.start && lessonTime < period.end {
+                return period.number == 0 ? "Tutor" : "Period \(period.number)"
+            }
+        }
+        
+        return "Unknown Period"
     }
     
     var body: some View {
-        ZStack {  // Add ZStack for proper background layering
-            Theme.base.ignoresSafeArea()  // Full screen background
+        ZStack {
+            Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("\(day)'s Timetable")
                         .font(.largeTitle)
-                        .foregroundColor(Theme.text)
+                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                         .padding()
                     
                     if lessons.isEmpty {
                         Text("No lessons for this day.")
                             .font(.subheadline)
-                            .foregroundColor(Theme.subtext0)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
                             .padding()
                     } else {
-                        ForEach(lessons) { lesson in
+                        ForEach(lessons.sorted { 
+                            formatTimeToHHmm(from: $0.startTime) ?? "" < formatTimeToHHmm(from: $1.startTime) ?? "" 
+                        }) { lesson in
                             VStack(spacing: 12) {
                                 // Header row
                                 HStack {
-                                    Text(lesson.periodName)
+                                    Text(getPeriodName(for: lesson.startTime))
                                         .font(.headline)
-                                        .foregroundColor(Theme.text)
+                                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                     Spacer()
                                     Text(lesson.subject)
                                         .font(.headline)
-                                        .foregroundColor(Theme.text)
+                                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                 }
                                 
                                 // Time row
@@ -111,7 +89,7 @@ struct DayTimetableView: View {
                                     Label(formatTime(from: lesson.endTime), systemImage: "clock")
                                 }
                                 .font(.subheadline)
-                                .foregroundColor(Theme.subtext0)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
                                 
                                 // Location and teacher row
                                 HStack {
@@ -120,11 +98,11 @@ struct DayTimetableView: View {
                                     Label(lesson.teacherName, systemImage: "person")
                                 }
                                 .font(.subheadline)
-                                .foregroundColor(Theme.subtext0)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Theme.surface0)
+                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                             .cornerRadius(8)
                             .shadow(color: Theme.crust.opacity(0.1), radius: 5, x: 0, y: 2)
                         }
@@ -134,6 +112,9 @@ struct DayTimetableView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .navigationBarHidden(false)
+        .navigationBarTitleTextColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
         .onDisappear {
             selectedDay = nil
         }

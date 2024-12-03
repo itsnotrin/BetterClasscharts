@@ -1,4 +1,13 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+
+enum AppTheme: String, CaseIterable {
+    case light = "Light"
+    case dark = "Dark"
+    case catppuccin = "Catppuccin Macchiato"
+}
 
 enum Theme {
     // Catppuccin Macchiato colors
@@ -32,6 +41,70 @@ enum Theme {
     static let pink = Color(hex: "f5bde6")
     static let flamingo = Color(hex: "f0c6c6")
     static let rosewater = Color(hex: "f4dbd6")
+    
+    // Dynamic colors based on selected theme
+    static func backgroundColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
+        switch theme {
+        case .catppuccin:
+            return base
+        case .light:
+            return .white
+        case .dark:
+            #if canImport(UIKit)
+            return Color(uiColor: .systemBackground)
+            #else
+            return Color.black
+            #endif
+        }
+    }
+    
+    static func textColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
+        switch theme {
+        case .catppuccin:
+            return text
+        case .light:
+            return Color(hex: "1e2030")
+        case .dark:
+            return .white
+        }
+    }
+    
+    static func surfaceColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
+        switch theme {
+        case .catppuccin:
+            return surface0
+        case .light:
+            return Color(hex: "f0f0f5")
+        case .dark:
+            #if canImport(UIKit)
+            return Color(uiColor: .systemGray5)
+            #else
+            return Color.gray.opacity(0.3)
+            #endif
+        }
+    }
+    
+    static func accentColor(for theme: AppTheme) -> Color {
+        switch theme {
+        case .catppuccin:
+            return mauve
+        case .light:
+            return Color(hex: "2563eb")
+        case .dark:
+            return .blue
+        }
+    }
+    
+    static func secondaryTextColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
+        switch theme {
+        case .catppuccin:
+            return subtext0
+        case .light:
+            return Color(hex: "64748b")
+        case .dark:
+            return Color.white.opacity(0.7)
+        }
+    }
 }
 
 extension Color {
@@ -69,12 +142,14 @@ extension View {
 
 struct NavigationBarTitleColor: ViewModifier {
     let color: Color
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     func body(content: Content) -> some View {
         content
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbarBackground(Theme.base, for: .navigationBar)
+            .toolbarColorScheme(appTheme == .catppuccin ? .dark : nil, for: .navigationBar)
+            .toolbarBackground(Theme.backgroundColor(for: appTheme, colorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .tint(color)
+            .tint(appTheme == .light ? Theme.textColor(for: appTheme, colorScheme: colorScheme) : color)
     }
 } 

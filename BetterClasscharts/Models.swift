@@ -10,12 +10,22 @@ struct HomeworkTask: Identifiable {
 }
 
 struct Lesson: Identifiable {
-    let id: Int
+    let id: UUID = UUID()
+    let apiId: Int
     let title: String
     let subject: String
     let startTime: String
     let endTime: String
     let teacherName: String
     let roomName: String
-    let periodName: String
+    
+    init(apiId: Int, title: String, subject: String, startTime: String, endTime: String, teacherName: String, roomName: String) {
+        self.apiId = apiId
+        self.title = title
+        self.subject = subject
+        self.startTime = startTime
+        self.endTime = endTime
+        self.teacherName = teacherName
+        self.roomName = roomName
+    }
 } 

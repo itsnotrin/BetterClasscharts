@@ -1,39 +1,68 @@
 import SwiftUI
 
-enum ThemeMode: String, CaseIterable {
-    case light = "Light"
-    case dark = "Dark"
-    case system = "System"
-}
-
 struct SettingsView: View {
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
     @State private var showingLogoutAlert = false
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Theme.base.ignoresSafeArea()
+        ZStack {
+            Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Large Title
+                Text("Settings")
+                    .font(.largeTitle.bold())
+                    .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
                 
+                // Rest of the view
                 VStack(spacing: 20) {
+                    // Theme Section
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Appearance")
+                            .font(.headline)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                            .padding(.horizontal)
+                        
+                        HStack {
+                            Text("Theme")
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                            Spacer()
+                            Picker("", selection: $appTheme) {
+                                ForEach(AppTheme.allCases, id: \.self) { theme in
+                                    Text(theme.rawValue)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                        }
+                        .padding()
+                        .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                    }
+                    
                     // Version Info Section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("About")
                             .font(.headline)
-                            .foregroundColor(Theme.text)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             .padding(.horizontal)
                         
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("Version")
-                                    .foregroundColor(Theme.text)
-                                Spacer()
-                                Text("0.0.1")
-                                    .foregroundColor(Theme.subtext0)
-                            }
-                            .padding()
-                            .background(Theme.surface0)
+                        HStack {
+                            Text("Version")
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                            Spacer()
+                            Text("0.0.1")
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
                         }
+                        .padding()
+                        .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
@@ -42,7 +71,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Account")
                             .font(.headline)
-                            .foregroundColor(Theme.text)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             .padding(.horizontal)
                         
                         Button(action: { showingLogoutAlert = true }) {
@@ -54,7 +83,7 @@ struct SettingsView: View {
                                     .foregroundColor(Theme.red)
                             }
                             .padding()
-                            .background(Theme.surface0)
+                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                             .cornerRadius(12)
                         }
                         .padding(.horizontal)
@@ -64,23 +93,21 @@ struct SettingsView: View {
                 }
                 .padding(.top)
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleTextColor(Theme.text)
-            .alert("Log Out", isPresented: $showingLogoutAlert) {
-                Button("Cancel", role: .cancel) {
-                    // Do nothing
+        }
+        .navigationTitle("Settings")
+        .navigationBarTitleTextColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+        .tint(Theme.accentColor(for: appTheme))
+        .alert("Log Out", isPresented: $showingLogoutAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Log Out", role: .destructive) {
+                StudentClient.clearSavedCredentials()
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first {
+                    window.rootViewController?.dismiss(animated: true)
                 }
-                .foregroundColor(Theme.text)
-                
-                Button("Log Out", role: .destructive) {
-                    StudentClient.clearSavedCredentials()
-                    dismiss()
-                }
-                .foregroundColor(Theme.red)
-            } message: {
-                Text("Are you sure you want to log out?")
-                    .foregroundColor(Theme.text)
             }
+        } message: {
+            Text("Are you sure you want to log out?")
         }
     }
 } 

@@ -450,11 +450,19 @@ class StudentClient {
                               let startTime = lessonDict["start_time"] as? String,
                               let endTime = lessonDict["end_time"] as? String,
                               let teacherName = lessonDict["teacher_name"] as? String,
-                              let roomName = lessonDict["room_name"] as? String,
-                              let periodName = lessonDict["period_name"] as? String else {
+                              let roomName = lessonDict["room_name"] as? String else {
                             return nil
                         }
-                        return Lesson(id: id, title: title, subject: subject, startTime: startTime, endTime: endTime, teacherName: teacherName, roomName: roomName, periodName: periodName)
+                        
+                        return Lesson(
+                            apiId: id,
+                            title: title,
+                            subject: subject,
+                            startTime: startTime,
+                            endTime: endTime,
+                            teacherName: teacherName,
+                            roomName: roomName
+                        )
                     }
                     
                     completion(.success(lessons))

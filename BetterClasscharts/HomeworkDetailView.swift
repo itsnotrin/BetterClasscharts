@@ -4,6 +4,8 @@ struct HomeworkDetailView: View {
     let homework: HomeworkTask
     @State private var isCompleted: Bool
     @State private var isLoading = false
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     init(homework: HomeworkTask) {
         self.homework = homework
@@ -12,7 +14,7 @@ struct HomeworkDetailView: View {
     
     var body: some View {
         ZStack {
-            Theme.base.ignoresSafeArea()
+            Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -21,23 +23,23 @@ struct HomeworkDetailView: View {
                         HStack(alignment: .top) {
                             Text(homework.title.processHTML())
                                 .font(.title2.bold())
-                                .foregroundColor(Theme.text)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             
                             Spacer()
                             
                             if isLoading {
                                 ProgressView()
                                     .frame(width: 24, height: 24)
-                                    .tint(Theme.mauve)
+                                    .tint(Theme.accentColor(for: appTheme))
                             } else {
                                 Button(action: toggleCompletion) {
                                     Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                                         .resizable()
                                         .frame(width: 24, height: 24)
-                                        .foregroundColor(isCompleted ? Theme.green : Theme.surface2)
+                                        .foregroundColor(isCompleted ? Theme.green : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                         .background(
                                             Circle()
-                                                .fill(isCompleted ? Theme.green.opacity(0.2) : Theme.surface0)
+                                                .fill(isCompleted ? Theme.green.opacity(0.2) : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                                 .frame(width: 32, height: 32)
                                         )
                                 }
@@ -49,45 +51,49 @@ struct HomeworkDetailView: View {
                         HStack(spacing: 12) {
                             Text(homework.subject)
                                 .font(.headline)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                 .padding(.vertical, 4)
                                 .padding(.horizontal, 12)
-                                .background(Theme.surface1)
+                                .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                 .cornerRadius(8)
                             
                             Text("Due: \(homework.dueDate.formatted(date: .long, time: .omitted))")
                                 .font(.subheadline)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                 .padding(.vertical, 4)
                                 .padding(.horizontal, 12)
-                                .background(Theme.surface0)
+                                .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                 .cornerRadius(8)
                         }
                         .foregroundColor(Theme.subtext0)
                     }
                     .padding()
-                    .background(Theme.surface0.opacity(0.5))
+                    .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme).opacity(0.5))
                     .cornerRadius(16)
                     
                     // Description section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Description")
                             .font(.headline)
-                            .foregroundColor(Theme.text)
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                         
                         Text(homework.description.processHTML())
                             .font(.body)
-                            .foregroundColor(Theme.subtext0)
+                            .foregroundColor(Theme.secondaryTextColor(for: appTheme, colorScheme: colorScheme))
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.surface0.opacity(0.5))
+                    .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme).opacity(0.5))
                     .cornerRadius(16)
                 }
                 .padding()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarTitleTextColor(Theme.text)
+        .navigationBarBackButtonHidden(false)
+        .navigationBarHidden(false)
+        .navigationBarTitleTextColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
     }
     
     private func toggleCompletion() {

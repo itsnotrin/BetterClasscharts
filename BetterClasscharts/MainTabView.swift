@@ -2,30 +2,48 @@ import SwiftUI
 
 struct MainTabView: View {
     let studentName: String
-    @AppStorage("themeMode") private var themeMode: ThemeMode = .system
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @State private var refreshTimer: Timer?
     @Environment(\.dismiss) var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         TabView {
-            HomeworkView()
-                .tabItem {
-                    Label("Homework", systemImage: "book.fill")
-                }
+            NavigationStack {
+                HomeworkView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar(.hidden, for: .navigationBar)
+            }
+            .tabItem {
+                Label("Homework", systemImage: "book.fill")
+            }
             
-            TimetableView()
-                .tabItem {
-                    Label("Timetable", systemImage: "calendar")
-                }
+            NavigationStack {
+                TimetableView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar(.hidden, for: .navigationBar)
+            }
+            .tabItem {
+                Label("Timetable", systemImage: "calendar")
+            }
             
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
+            NavigationStack {
+                SettingsView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar(.hidden, for: .navigationBar)
+            }
+            .tabItem {
+                Label("Settings", systemImage: "gear")
+            }
         }
-        .tint(Theme.mauve)
+        .tint(Theme.accentColor(for: appTheme))
         .onAppear {
             startTokenRefresh()
+            let unselectedColor = appTheme == .light ? 
+                UIColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.6)) : 
+                UIColor.gray
+            
+            UITabBar.appearance().unselectedItemTintColor = unselectedColor
         }
         .onDisappear {
             stopTokenRefresh()
@@ -62,12 +80,12 @@ struct MainTabView: View {
     }
     
     private func getPreferredColorScheme() -> ColorScheme? {
-        switch themeMode {
+        switch appTheme {
         case .light:
             return .light
         case .dark:
             return .dark
-        case .system:
+        case .catppuccin:
             return nil
         }
     }
@@ -77,41 +95,48 @@ struct HomeworkView: View {
     @State private var homeworkTasks: [HomeworkTask] = []
     @State private var isLoadingHomework = false
     @State private var homeworkError: String?
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Theme.base.ignoresSafeArea()
+        ZStack {
+            Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Large Title
+                Text("Homework")
+                    .font(.largeTitle.bold())
+                    .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
                 
-                VStack {
-                    if isLoadingHomework {
-                        ProgressView()
-                            .tint(Theme.mauve)
-                    } else if let error = homeworkError {
-                        Text(error)
-                            .foregroundColor(Theme.red)
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(homeworkTasks) { task in
-                                    NavigationLink(destination: HomeworkDetailView(homework: task)) {
-                                        HomeworkListItemView(task: task) { newState in
-                                            if let index = homeworkTasks.firstIndex(where: { $0.id == task.id }) {
-                                                homeworkTasks[index].completed = newState
-                                            }
+                if isLoadingHomework {
+                    ProgressView()
+                        .tint(Theme.accentColor(for: appTheme))
+                } else if let error = homeworkError {
+                    Text(error)
+                        .foregroundColor(Theme.red)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(homeworkTasks) { task in
+                                NavigationLink(destination: HomeworkDetailView(homework: task)) {
+                                    HomeworkListItemView(task: task) { newState in
+                                        if let index = homeworkTasks.firstIndex(where: { $0.id == task.id }) {
+                                            homeworkTasks[index].completed = newState
                                         }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
                         }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
                     }
                 }
             }
-            .navigationTitle("Homework")
-            .navigationBarTitleTextColor(Theme.text)
         }
         .onAppear {
             loadHomework()
@@ -147,7 +172,8 @@ struct TimetableView: View {
     @State private var selectedDay: String?
     @State private var lessons: [Lesson] = []
     @State private var isLoadingLessons = false
-    @State private var navigateToDay = false
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     private func isCurrentDay(_ day: String) -> Bool {
         let calendar = Calendar.current
@@ -165,46 +191,56 @@ struct TimetableView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {  // Add ZStack to ensure background covers entire view
-                Theme.base.ignoresSafeArea()  // Full screen background
+        ZStack {
+            Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Large Title
+                Text("Timetable")
+                    .font(.largeTitle.bold())
+                    .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
                 
-                VStack(spacing: 10) {
+                Spacer()  // Add spacer to push content down
+                
+                // Rest of the view
+                VStack(spacing: 16) {  // Increased spacing between buttons
                     ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], id: \.self) { day in
-                        Button(action: {
-                            loadTimetable(for: day)
-                        }) {
+                        NavigationLink {
+                            if isLoadingLessons {
+                                ProgressView()
+                                    .tint(Theme.accentColor(for: appTheme))
+                            } else {
+                                DayTimetableView(day: day, lessons: lessons, selectedDay: $selectedDay)
+                            }
+                        } label: {
                             Text(day)
                                 .font(.title2)
                                 .frame(maxWidth: .infinity, minHeight: 50)
                                 .background(
                                     Group {
                                         if isCurrentDay(day) {
-                                            Theme.surface0
+                                            Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
                                         } else {
-                                            selectedDay == day ? Theme.mauve : Theme.surface1
+                                            selectedDay == day ? Theme.accentColor(for: appTheme) : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
                                         }
                                     }
                                 )
-                                .foregroundColor(Theme.text)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                 .cornerRadius(12)
                                 .shadow(color: Theme.crust.opacity(0.2), radius: 5, x: 0, y: 2)
-                                .overlay {
-                                    if isLoadingLessons && selectedDay == day {
-                                        ProgressView()
-                                            .tint(Theme.text)
-                                    }
-                                }
                         }
-                        .disabled(isLoadingLessons)
+                        .simultaneousGesture(TapGesture().onEnded {
+                            loadTimetable(for: day)
+                        })
                     }
                 }
-                .padding()
-            }
-            .navigationTitle("Timetable")
-            .navigationBarTitleTextColor(Theme.text)  // Make navigation title use theme color
-            .navigationDestination(isPresented: $navigateToDay) {
-                DayTimetableView(day: selectedDay ?? "", lessons: lessons, selectedDay: $selectedDay)
+                .padding(.horizontal)
+                
+                Spacer()  // Add spacer at bottom
             }
         }
     }
@@ -246,7 +282,6 @@ struct TimetableView: View {
                 case .success(let fetchedLessons):
                     lessons = fetchedLessons
                     selectedDay = day
-                    navigateToDay = true
                 case .failure:
                     lessons = []
                 }

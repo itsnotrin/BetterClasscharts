@@ -14,16 +14,18 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var navigateToWelcome = false
     @State private var studentName = ""
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.base.ignoresSafeArea()
+                Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
                 
                 VStack(spacing: 24) {
                     Text("Login")
                         .font(.largeTitle.bold())
-                        .foregroundColor(Theme.text)
+                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                         .padding(.top, 40)
                     
                     VStack(spacing: 20) {
@@ -31,18 +33,17 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Date of Birth")
                                 .font(.headline)
-                                .foregroundColor(Theme.subtext0)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             
-                            DatePicker(
-                                "",
-                                selection: $dateOfBirth,
-                                displayedComponents: [.date]
-                            )
-                            .datePickerStyle(.compact)
-                            .labelsHidden()
-                            .tint(Theme.mauve)
+                            HStack {
+                                DatePicker("", selection: $dateOfBirth, displayedComponents: [.date])
+                                    .datePickerStyle(.compact)
+                                    .labelsHidden()
+                                    .tint(Theme.accentColor(for: appTheme))
+                                Spacer()
+                            }
                             .padding()
-                            .background(Theme.surface0)
+                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                             .cornerRadius(12)
                         }
                         
@@ -50,22 +51,18 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Pupil Code")
                                 .font(.headline)
-                                .foregroundColor(Theme.subtext0)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             
                             TextField("", text: $pupilCode)
                                 .textFieldStyle(.plain)
                                 .padding()
-                                .background(Theme.surface0)
+                                .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                 .cornerRadius(12)
-                                .foregroundColor(Theme.text)
-                                .tint(Theme.mauve)
-                                .onChange(of: pupilCode) { oldValue, newValue in
-                                    pupilCode = newValue.filter { !$0.isWhitespace }
-                                }
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                                .tint(Theme.accentColor(for: appTheme))
                         }
                     }
                     .padding(.horizontal)
-                    .padding(.top, 20)
                     
                     if let error = errorMessage {
                         Text(error)
@@ -78,7 +75,7 @@ struct ContentView: View {
                         HStack {
                             if isLoading {
                                 ProgressView()
-                                    .tint(Theme.text)
+                                    .tint(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             } else {
                                 Text("Continue")
                                     .fontWeight(.semibold)
@@ -86,8 +83,8 @@ struct ContentView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(pupilCode.isEmpty ? Theme.surface1 : Theme.mauve)
-                        .foregroundColor(pupilCode.isEmpty ? Theme.subtext0 : Theme.text)
+                        .background(pupilCode.isEmpty ? Theme.surfaceColor(for: appTheme, colorScheme: colorScheme) : Theme.accentColor(for: appTheme))
+                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                         .cornerRadius(12)
                         .padding(.horizontal)
                     }
