@@ -35,17 +35,9 @@ struct ContentView: View {
                                 .font(.headline)
                                 .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                             
-                            HStack {
-                                DatePicker("", selection: $dateOfBirth, displayedComponents: [.date])
-                                    .datePickerStyle(.compact)
-                                    .labelsHidden()
-                                    .tint(Theme.accentColor(for: appTheme))
-                                Spacer()
-                            }
-                            .padding()
-                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
-                            .cornerRadius(12)
+                            CustomDatePicker(selectedDate: $dateOfBirth)
                         }
+                        .padding(.horizontal)
                         
                         // Pupil Code Field
                         VStack(alignment: .leading, spacing: 8) {
@@ -55,42 +47,44 @@ struct ContentView: View {
                             
                             TextField("", text: $pupilCode)
                                 .textFieldStyle(.plain)
-                                .padding()
+                                .frame(height: 40)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
                                 .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                                 .cornerRadius(12)
                                 .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
                                 .tint(Theme.accentColor(for: appTheme))
                         }
-                    }
-                    .padding(.horizontal)
-                    
-                    if let error = errorMessage {
-                        Text(error)
-                            .foregroundColor(Theme.red)
-                            .font(.subheadline)
-                            .padding(.horizontal)
-                    }
-                    
-                    Button(action: performLogin) {
-                        HStack {
-                            if isLoading {
-                                ProgressView()
-                                    .tint(Theme.textColor(for: appTheme, colorScheme: colorScheme))
-                            } else {
-                                Text("Continue")
-                                    .fontWeight(.semibold)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(pupilCode.isEmpty ? Theme.surfaceColor(for: appTheme, colorScheme: colorScheme) : Theme.accentColor(for: appTheme))
-                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
-                        .cornerRadius(12)
                         .padding(.horizontal)
+                        
+                        if let error = errorMessage {
+                            Text(error)
+                                .foregroundColor(Theme.red)
+                                .font(.subheadline)
+                                .padding(.horizontal)
+                        }
+                        
+                        Button(action: performLogin) {
+                            HStack {
+                                if isLoading {
+                                    ProgressView()
+                                        .tint(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                                } else {
+                                    Text("Continue")
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(pupilCode.isEmpty ? Theme.surfaceColor(for: appTheme, colorScheme: colorScheme) : Theme.accentColor(for: appTheme))
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
+                        .disabled(pupilCode.isEmpty || isLoading)
+                        
+                        Spacer()
                     }
-                    .disabled(pupilCode.isEmpty || isLoading)
-                    
-                    Spacer()
                 }
             }
             .navigationDestination(isPresented: $navigateToWelcome) {
@@ -161,6 +155,50 @@ struct ContentView: View {
                     StudentClient.clearSavedCredentials()
                 }
             }
+        }
+    }
+}
+
+struct CustomDatePicker: View {
+    @Binding var selectedDate: Date
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @Environment(\.colorScheme) var colorScheme
+    @State private var showingPicker = false
+    
+    var body: some View {
+        Button(action: { showingPicker = true }) {
+            HStack {
+                Text(selectedDate.formatted(date: .abbreviated, time: .omitted))
+                    .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .frame(height: 40)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
+        .cornerRadius(12)
+        .sheet(isPresented: $showingPicker) {
+            NavigationStack {
+                DatePicker("Select Date", selection: $selectedDate, displayedComponents: [.date])
+                    .datePickerStyle(.graphical)
+                    .tint(Theme.accentColor(for: appTheme))
+                    .padding()
+                    .navigationTitle("Select Date of Birth")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingPicker = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
         }
     }
 }
