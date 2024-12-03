@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct BetterClasschartsApp: App {
+    @StateObject private var loginState = LoginState()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if loginState.isLoggedIn {
+                    MainTabView(studentName: "")  // You might need to handle this differently
+                } else {
+                    ContentView()
+                }
+            }
+            .environment(\.loginState, loginState)
         }
     }
 }

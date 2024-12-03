@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var studentName = ""
     @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.loginState) var loginState
     
     var body: some View {
         NavigationStack {
@@ -112,6 +113,7 @@ struct ContentView: View {
                 case .success(let firstName):
                     StudentClient.saveCredentials(pupilCode: pupilCode, dateOfBirth: dateOfBirth)
                     studentName = firstName
+                    loginState.isLoggedIn = true
                     navigateToWelcome = true
                 case .failure(let error):
                     StudentClient.clearSavedCredentials()

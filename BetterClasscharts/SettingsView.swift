@@ -2,8 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
-    @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.loginState) var loginState
     @State private var showingLogoutAlert = false
     
     var body: some View {
@@ -101,10 +101,7 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) { }
             Button("Log Out", role: .destructive) {
                 StudentClient.clearSavedCredentials()
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = windowScene.windows.first {
-                    window.rootViewController?.dismiss(animated: true)
-                }
+                loginState.isLoggedIn = false
             }
         } message: {
             Text("Are you sure you want to log out?")
