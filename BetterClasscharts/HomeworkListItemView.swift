@@ -1,9 +1,4 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#else
-import AppKit
-#endif
 
 struct HomeworkListItemView: View {
     let task: HomeworkTask
@@ -45,11 +40,7 @@ struct HomeworkListItemView: View {
             }
         }
         .padding()
-        #if os(iOS)
-        .background(Color(uiColor: .systemBackground))
-        #else
-        .background(Color(nsColor: .windowBackgroundColor))
-        #endif
+        .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(radius: 1)
     }
