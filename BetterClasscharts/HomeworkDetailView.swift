@@ -2,6 +2,13 @@ import SwiftUI
 
 struct HomeworkDetailView: View {
     let homework: HomeworkTask
+    @State private var isCompleted: Bool
+    @State private var isLoading = false
+    
+    init(homework: HomeworkTask) {
+        self.homework = homework
+        self._isCompleted = State(initialValue: homework.completed)
+    }
     
     var body: some View {
         ScrollView {
@@ -13,9 +20,17 @@ struct HomeworkDetailView: View {
                     
                     Spacer()
                     
-                    if homework.completed {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                    if isLoading {
+                        ProgressView()
+                            .frame(width: 24, height: 24)
+                    } else {
+                        Button(action: toggleCompletion) {
+                            Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                                .resizable()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(isCompleted ? .green : .gray)
+                        }
+                        .buttonStyle(BorderlessButtonStyle())
                     }
                 }
                 
@@ -37,5 +52,21 @@ struct HomeworkDetailView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func toggleCompletion() {
+        isLoading = true
+        StudentClient.toggleHomeworkCompletion(homeworkId: homework.id, completed: isCompleted) { result in
+            DispatchQueue.main.async {
+                isLoading = false
+                switch result {
+                case .success(let newState):
+                    isCompleted = newState
+                case .failure:
+                    // You might want to show an error message here
+                    break
+                }
+            }
+        }
     }
 }

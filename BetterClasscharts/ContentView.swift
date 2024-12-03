@@ -99,7 +99,7 @@ struct ContentView: View {
             .padding()
             .background(colorScheme == .dark ? Color(.systemBackground) : .white)
             .navigationDestination(isPresented: $navigateToWelcome) {
-                HomeScreen(studentName: studentName)
+                MainTabView(studentName: studentName)
             }
         }
         .onAppear {

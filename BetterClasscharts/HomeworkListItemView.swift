@@ -28,11 +28,15 @@ struct HomeworkListItemView: View {
             Spacer()
             if isLoading {
                 ProgressView()
+                    .frame(width: 24, height: 24)
             } else {
                 Button(action: toggleCompletion) {
                     Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
+                        .resizable()
+                        .frame(width: 24, height: 24)
                         .foregroundColor(isCompleted ? .green : .gray)
                 }
+                .buttonStyle(BorderlessButtonStyle())
             }
         }
         .padding()

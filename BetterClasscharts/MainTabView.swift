@@ -90,6 +90,21 @@ struct TimetableView: View {
     @State private var isLoadingLessons = false
     @State private var navigateToDay = false
     
+    private func isCurrentDay(_ day: String) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.component(.weekday, from: Date())
+        
+        // Convert weekday to our day format
+        switch today {
+        case 2: return day == "Monday"
+        case 3: return day == "Tuesday"
+        case 4: return day == "Wednesday"
+        case 5: return day == "Thursday"
+        case 6: return day == "Friday"
+        default: return false
+        }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 10) {
@@ -100,15 +115,26 @@ struct TimetableView: View {
                         Text(day)
                             .font(.title2)
                             .frame(maxWidth: .infinity, minHeight: 50)
-                            .background(selectedDay == day ? Color.blue.opacity(0.7) : Color.gray.opacity(0.5))
+                            .background(
+                                Group {
+                                    if isCurrentDay(day) {
+                                        Color(.systemBlue).opacity(0.15)
+                                    } else {
+                                        selectedDay == day ? Color.blue.opacity(0.7) : Color.gray.opacity(0.5)
+                                    }
+                                }
+                            )
                             .foregroundColor(.white)
                             .cornerRadius(12)
                             .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+                            .overlay {
+                                if isLoadingLessons && selectedDay == day {
+                                    ProgressView()
+                                        .tint(.white)
+                                }
+                            }
                     }
-                }
-                
-                if isLoadingLessons {
-                    ProgressView()
+                    .disabled(isLoadingLessons)
                 }
             }
             .padding()

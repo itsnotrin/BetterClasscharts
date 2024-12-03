@@ -31,56 +31,6 @@ struct DayTimetableView: View {
         lessons.map { UniqueLesson($0) }
     }
     
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("\(day)'s Timetable")
-                    .font(.largeTitle)
-                    .padding()
-                
-                if lessons.isEmpty {
-                    Text("No lessons for this day.")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .padding()
-                } else {
-                    ForEach(uniqueLessons) { uniqueLesson in
-                        let lesson = uniqueLesson.lesson
-                        VStack(alignment: .leading) {
-                            let periodNumber = getPeriodNumber(for: lesson.startTime)
-                            Text("Period \(periodNumber)")
-                                .font(.headline)
-                            
-                            Text(lesson.subject)
-                                .font(.subheadline)
-                            
-                            let startTime = formatTime(from: lesson.startTime)
-                            let endTime = formatTime(from: lesson.endTime)
-                            
-                            Text("From: \(startTime) To: \(endTime)")
-                                .font(.caption)
-                            Text("Room: \(lesson.roomName)")
-                                .font(.caption)
-                            Text("Teacher: \(lesson.teacherName)")
-                                .font(.caption)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-                        .padding(.horizontal)
-                    }
-                }
-            }
-            .padding()
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .onDisappear {
-            selectedDay = nil
-        }
-    }
-    
     // Helper function to get period number based on start time
     private func getPeriodNumber(for startTimeString: String) -> Int {
         let timeFormatter = DateFormatter()
@@ -116,5 +66,71 @@ struct DayTimetableView: View {
             return timeFormatter.string(from: date)
         }
         return dateTimeString // Return original if parsing fails
+    }
+    
+    // Helper function to get period display text
+    private func getPeriodDisplay(for startTimeString: String) -> String {
+        let periodNumber = getPeriodNumber(for: startTimeString)
+        return periodNumber == 0 ? "Tutor" : "Period \(periodNumber)"
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("\(day)'s Timetable")
+                    .font(.largeTitle)
+                    .padding()
+                
+                if lessons.isEmpty {
+                    Text("No lessons for this day.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .padding()
+                } else {
+                    ForEach(uniqueLessons) { uniqueLesson in
+                        let lesson = uniqueLesson.lesson
+                        VStack(spacing: 12) {
+                            // Header row
+                            HStack {
+                                Text(getPeriodDisplay(for: lesson.startTime))
+                                    .font(.headline)
+                                Spacer()
+                                Text(lesson.subject)
+                                    .font(.headline)
+                            }
+                            
+                            // Time row
+                            HStack {
+                                Label(formatTime(from: lesson.startTime), systemImage: "clock")
+                                Text("→")
+                                Label(formatTime(from: lesson.endTime), systemImage: "clock")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            
+                            // Location and teacher row
+                            HStack {
+                                Label(lesson.roomName, systemImage: "building.2")
+                                Spacer()
+                                Label(lesson.teacherName, systemImage: "person")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            selectedDay = nil
+        }
     }
 } 
