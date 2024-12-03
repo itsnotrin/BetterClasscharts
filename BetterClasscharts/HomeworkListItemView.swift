@@ -5,7 +5,7 @@ struct HomeworkListItemView: View {
     @State private var isCompleted: Bool
     @State private var isLoading = false
     var onCompletionToggled: (Bool) -> Void
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     
     init(task: HomeworkTask, onCompletionToggled: @escaping (Bool) -> Void) {

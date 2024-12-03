@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var navigateToWelcome = false
     @State private var studentName = ""
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.loginState) var loginState
     
@@ -163,7 +163,7 @@ struct ContentView: View {
 
 struct CustomDatePicker: View {
     @Binding var selectedDate: Date
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     @State private var showingPicker = false
     

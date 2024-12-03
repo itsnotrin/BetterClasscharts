@@ -6,10 +6,27 @@ import UIKit
 enum AppTheme: String, CaseIterable {
     case light = "Light"
     case dark = "Dark"
-    case catppuccin = "Catppuccin Macchiato"
+    case catppuccinLatte = "Catppuccin Latte"
+    case catppuccinFrappe = "Catppuccin Frappé"
+    case catppuccinMacchiato = "Catppuccin Macchiato"
+    case catppuccinMocha = "Catppuccin Mocha"
 }
 
 enum Theme {
+    // Catppuccin Latte colors
+    static let latteBase = Color(hex: "eff1f5")
+    static let latteText = Color(hex: "4c4f69")
+    static let latteSubtext0 = Color(hex: "6c6f85")
+    static let latteSurface0 = Color(hex: "ccd0da")
+    static let latteMauve = Color(hex: "8839ef")
+
+    // Catppuccin Frappé colors
+    static let frappeBase = Color(hex: "303446")
+    static let frappeText = Color(hex: "c6d0f5")
+    static let frappeSubtext0 = Color(hex: "a5adce")
+    static let frappeSurface0 = Color(hex: "414559")
+    static let frappeMauve = Color(hex: "ca9ee6")
+
     // Catppuccin Macchiato colors
     static let base = Color(hex: "24273a")
     static let mantle = Color(hex: "1e2030")
@@ -41,68 +58,67 @@ enum Theme {
     static let pink = Color(hex: "f5bde6")
     static let flamingo = Color(hex: "f0c6c6")
     static let rosewater = Color(hex: "f4dbd6")
-    
-    // Dynamic colors based on selected theme
+
+    // Catppuccin Mocha colors
+    static let mochaBase = Color(hex: "1e1e2e")
+    static let mochaText = Color(hex: "cdd6f4")
+    static let mochaSubtext0 = Color(hex: "a6adc8")
+    static let mochaSurface0 = Color(hex: "313244")
+    static let mochaMauve = Color(hex: "cba6f7")
+
+    // Update the theme functions to include all variants
     static func backgroundColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
-        case .catppuccin:
-            return base
-        case .light:
-            return .white
-        case .dark:
-            #if canImport(UIKit)
-            return Color(uiColor: .systemBackground)
-            #else
-            return Color.black
-            #endif
+        case .catppuccinLatte: return latteBase
+        case .catppuccinFrappe: return frappeBase
+        case .catppuccinMacchiato: return base
+        case .catppuccinMocha: return mochaBase
+        case .light: return .white
+        case .dark: return Color(uiColor: .systemBackground)
         }
     }
-    
+
     static func textColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
-        case .catppuccin:
-            return text
-        case .light:
-            return Color(hex: "1e2030")
-        case .dark:
-            return .white
+        case .catppuccinLatte: return latteText
+        case .catppuccinFrappe: return frappeText
+        case .catppuccinMacchiato: return text
+        case .catppuccinMocha: return mochaText
+        case .light: return Color(hex: "1e2030")
+        case .dark: return .white
         }
     }
-    
+
     static func surfaceColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
-        case .catppuccin:
-            return surface0
-        case .light:
-            return Color(hex: "f0f0f5")
-        case .dark:
-            #if canImport(UIKit)
-            return Color(uiColor: .systemGray5)
-            #else
-            return Color.gray.opacity(0.3)
-            #endif
+        case .catppuccinLatte: return latteSurface0
+        case .catppuccinFrappe: return frappeSurface0
+        case .catppuccinMacchiato: return surface0
+        case .catppuccinMocha: return mochaSurface0
+        case .light: return Color(hex: "f0f0f5")
+        case .dark: return Color(uiColor: .systemGray5)
         }
     }
-    
+
     static func accentColor(for theme: AppTheme) -> Color {
         switch theme {
-        case .catppuccin:
-            return mauve
-        case .light:
-            return Color(hex: "2563eb")
-        case .dark:
-            return .blue
+        case .catppuccinLatte: return latteMauve
+        case .catppuccinFrappe: return frappeMauve
+        case .catppuccinMacchiato: return mauve
+        case .catppuccinMocha: return mochaMauve
+        case .light: return Color(hex: "2563eb")
+        case .dark: return .blue
         }
     }
-    
+
     static func secondaryTextColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
-        case .catppuccin:
-            return subtext0
-        case .light:
-            return Color(hex: "64748b")
-        case .dark:
-            return Color.white.opacity(0.7)
+        case .catppuccinLatte: return latteSubtext0
+        case .catppuccinFrappe: return frappeSubtext0
+        case .catppuccinMacchiato: return subtext0
+        case .catppuccinMocha: return mochaSubtext0
+        case .light: return Color(hex: "64748b")
+        case .dark: return Color.white.opacity(0.7)
         }
     }
 }
@@ -142,14 +158,23 @@ extension View {
 
 struct NavigationBarTitleColor: ViewModifier {
     let color: Color
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     
     func body(content: Content) -> some View {
         content
-            .toolbarColorScheme(appTheme == .catppuccin ? .dark : nil, for: .navigationBar)
+            .toolbarColorScheme(isDarkTheme ? .dark : nil, for: .navigationBar)
             .toolbarBackground(Theme.backgroundColor(for: appTheme, colorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .tint(appTheme == .light ? Theme.textColor(for: appTheme, colorScheme: colorScheme) : color)
+            .tint(appTheme == .catppuccinLatte || appTheme == .light ? Theme.textColor(for: appTheme, colorScheme: colorScheme) : color)
+    }
+    
+    private var isDarkTheme: Bool {
+        switch appTheme {
+        case .catppuccinLatte, .light:
+            return false
+        case .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha, .dark:
+            return true
+        }
     }
 } 

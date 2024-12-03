@@ -4,7 +4,7 @@ struct HomeworkDetailView: View {
     let homework: HomeworkTask
     @State private var isCompleted: Bool
     @State private var isLoading = false
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     
     init(homework: HomeworkTask) {

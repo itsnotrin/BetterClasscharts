@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     let studentName: String
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @State private var refreshTimer: Timer?
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
@@ -85,8 +85,10 @@ struct MainTabView: View {
             return .light
         case .dark:
             return .dark
-        case .catppuccin:
-            return nil
+        case .catppuccinLatte:
+            return .light  // Latte is a light theme
+        case .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
+            return .dark  // These are all dark themes
         }
     }
 }
@@ -95,7 +97,7 @@ struct HomeworkView: View {
     @State private var homeworkTasks: [HomeworkTask] = []
     @State private var isLoadingHomework = false
     @State private var homeworkError: String?
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -172,7 +174,7 @@ struct TimetableView: View {
     @State private var selectedDay: String?
     @State private var lessons: [Lesson] = []
     @State private var isLoadingLessons = false
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
     @Environment(\.colorScheme) var colorScheme
     
     private func isCurrentDay(_ day: String) -> Bool {
