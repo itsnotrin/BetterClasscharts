@@ -2,6 +2,9 @@ import SwiftUI
 
 struct MainTabView: View {
     let studentName: String
+    @AppStorage("themeMode") private var themeMode: ThemeMode = .system
+    @State private var refreshTimer: Timer?
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         TabView {
@@ -14,6 +17,58 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Timetable", systemImage: "calendar")
                 }
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+        }
+        .preferredColorScheme(getPreferredColorScheme())
+        .onAppear {
+            startTokenRefresh()
+        }
+        .onDisappear {
+            stopTokenRefresh()
+        }
+    }
+    
+    private func startTokenRefresh() {
+        // Initial refresh
+        refreshToken()
+        
+        // Set up timer for subsequent refreshes
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
+            refreshToken()
+        }
+    }
+    
+    private func stopTokenRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+    
+    private func refreshToken() {
+        StudentClient.checkAndRefreshSession { result in
+            switch result {
+            case .success:
+                print("Token refreshed successfully")
+            case .failure(let error):
+                print("Token refresh failed: \(error)")
+                // If token refresh fails, we should log out
+                StudentClient.clearSavedCredentials()
+                dismiss()
+            }
+        }
+    }
+    
+    private func getPreferredColorScheme() -> ColorScheme? {
+        switch themeMode {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        case .system:
+            return nil
         }
     }
 }

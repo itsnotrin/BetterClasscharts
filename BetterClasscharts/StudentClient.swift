@@ -185,7 +185,7 @@ class StudentClient {
         return cookies
     }
     
-    private static func checkAndRefreshSession(completion: @escaping (Result<Void, Error>) -> Void) {
+    static func checkAndRefreshSession(completion: @escaping (Result<Void, Error>) -> Void) {
         guard let sessionId = currentSessionId else {
             completion(.failure(NetworkError.invalidCredentials))
             return

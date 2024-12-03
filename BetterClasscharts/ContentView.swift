@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var navigateToWelcome = false
     @State private var studentName = ""
+    @AppStorage("themeMode") private var themeMode: ThemeMode = .system
     
     var body: some View {
         NavigationStack {
@@ -109,6 +110,7 @@ struct ContentView: View {
                 attemptAutoLogin(dateOfBirth: saved.dateOfBirth, pupilCode: saved.pupilCode)
             }
         }
+        .preferredColorScheme(getPreferredColorScheme())
     }
     
     private func attemptAutoLogin(dateOfBirth: Date, pupilCode: String) {
@@ -124,6 +126,17 @@ struct ContentView: View {
                     StudentClient.clearSavedCredentials()
                 }
             }
+        }
+    }
+    
+    private func getPreferredColorScheme() -> ColorScheme? {
+        switch themeMode {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        case .system:
+            return nil
         }
     }
 }
