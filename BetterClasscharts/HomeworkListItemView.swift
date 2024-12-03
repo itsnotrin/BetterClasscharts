@@ -34,8 +34,6 @@ struct HomeworkListItemView: View {
                         .foregroundColor(isCompleted ? .green : .gray)
                 }
             }
-            Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
         }
         .padding()
         .background(Color(.systemBackground))

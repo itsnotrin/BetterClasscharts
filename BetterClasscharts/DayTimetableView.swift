@@ -5,6 +5,32 @@ struct DayTimetableView: View {
     let lessons: [Lesson]
     @Binding var selectedDay: String?
     
+    // Define the period time ranges
+    private let periodTimes: [(start: String, end: String, number: Int)] = [
+        ("08:45", "09:10", 0),
+        ("09:10", "10:10", 1),
+        ("10:10", "11:10", 2),
+        ("11:25", "12:25", 3),
+        ("13:15", "14:15", 4),
+        ("14:15", "15:15", 5)
+    ]
+    
+    // Create a struct to hold a lesson with a unique identifier
+    private struct UniqueLesson: Identifiable {
+        let id: String // Combine lesson id and start time for uniqueness
+        let lesson: Lesson
+        
+        init(_ lesson: Lesson) {
+            self.id = "\(lesson.id)_\(lesson.startTime)"
+            self.lesson = lesson
+        }
+    }
+    
+    // Convert lessons array to unique lessons
+    private var uniqueLessons: [UniqueLesson] {
+        lessons.map { UniqueLesson($0) }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -18,16 +44,16 @@ struct DayTimetableView: View {
                         .foregroundColor(.gray)
                         .padding()
                 } else {
-                    ForEach(lessons, id: \.id) { lesson in
+                    ForEach(uniqueLessons) { uniqueLesson in
+                        let lesson = uniqueLesson.lesson
                         VStack(alignment: .leading) {
-                            let periodDisplayName = lesson.periodName.replacingOccurrences(of: "(monday 2)", with: "")
-                            
-                            Text(periodDisplayName) // Display the modified period name
+                            let periodNumber = getPeriodNumber(for: lesson.startTime)
+                            Text("Period \(periodNumber)")
                                 .font(.headline)
+                            
                             Text(lesson.subject)
                                 .font(.subheadline)
                             
-                            // Format the start and end times
                             let startTime = formatTime(from: lesson.startTime)
                             let endTime = formatTime(from: lesson.endTime)
                             
@@ -51,11 +77,37 @@ struct DayTimetableView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
-            selectedDay = nil // Reset the selected day when navigating back
+            selectedDay = nil
         }
     }
     
-    // Helper function to format time
+    // Helper function to get period number based on start time
+    private func getPeriodNumber(for startTimeString: String) -> Int {
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        
+        guard let lessonTime = formatTimeToHHmm(from: startTimeString) else { return 1 }
+        
+        for period in periodTimes {
+            if lessonTime >= period.start && lessonTime < period.end {
+                return period.number
+            }
+        }
+        
+        return 1 // Default to period 1 if no match found
+    }
+    
+    // Helper function to format ISO8601 time to HH:mm
+    private func formatTimeToHHmm(from dateTimeString: String) -> String? {
+        let dateFormatter = ISO8601DateFormatter()
+        guard let date = dateFormatter.date(from: dateTimeString) else { return nil }
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        return timeFormatter.string(from: date)
+    }
+    
+    // Helper function to format time for display
     private func formatTime(from dateTimeString: String) -> String {
         let dateFormatter = ISO8601DateFormatter()
         if let date = dateFormatter.date(from: dateTimeString) {
