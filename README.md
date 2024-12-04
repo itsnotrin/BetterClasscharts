@@ -23,42 +23,42 @@ A modern, native iOS client for ClassCharts with multiple theme options.
 
 <details>
 <summary>Login Screen</summary>
-<img src="Screenshots/login.png" alt="Login Screen">
+<img src="Screenshots/login.png" alt="Login Screen" width="300">
 </details>
 
 <details>
 <summary>Homework List</summary>
-<img src="Screenshots/homework.png" alt="Homework List">
+<img src="Screenshots/homework.png" alt="Homework List" width="300">
 </details>
 
 <details>
 <summary>Homework Details</summary>
-<img src="Screenshots/homework_details.png" alt="Homework Details">
+<img src="Screenshots/homework_details.png" alt="Homework Details" width="300">
 </details>
 
 <details>
 <summary>Timetable View</summary>
-<img src="Screenshots/timetable.png" alt="Timetable View">
+<img src="Screenshots/timetable.png" alt="Timetable View" width="300">
 </details>
 
 <details>
 <summary>Timetable Day View</summary>
-<img src="Screenshots/timetable_day.png" alt="Timetable Day View">
+<img src="Screenshots/timetable_day.png" alt="Timetable Day View" width="300">
 </details>
 
 <details>
 <summary>Settings</summary>
-<img src="Screenshots/settings.png" alt="Settings">
+<img src="Screenshots/settings.png" alt="Settings" width="300">
 </details>
 
 <details>
 <summary>Theme Selection</summary>
-<img src="Screenshots/themes.png" alt="Theme Selection">
+<img src="Screenshots/themes.png" alt="Theme Selection" width="300">
 </details>
 
 <details>
 <summary>Catppuccin Theme Settings</summary>
-<img src="Screenshots/catppuccin.png" alt="Catppuccin Theme Settings">
+<img src="Screenshots/catppuccin.png" alt="Catppuccin Theme Settings" width="300">
 </details>
 
 ## Installation
