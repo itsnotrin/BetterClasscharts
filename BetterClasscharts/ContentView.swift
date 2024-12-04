@@ -14,7 +14,8 @@ struct ContentView: View {
     @State private var errorMessage: String?
     @State private var navigateToWelcome = false
     @State private var studentName = ""
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.loginState) var loginState
     
@@ -164,9 +165,16 @@ struct ContentView: View {
     
     private func getPreferredColorScheme() -> ColorScheme? {
         switch appTheme {
-        case .light, .catppuccinLatte:
+        case .light, .gruvboxLight:
             return .light
-        case .dark, .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte:
+                return .light
+            case .frappe, .macchiato, .mocha:
+                return .dark
+            }
+        case .dracula, .gruvboxDark, .tokyoNight, .synthwave, .rosePine, .dark:
             return .dark
         }
     }
@@ -174,7 +182,8 @@ struct ContentView: View {
 
 struct CustomDatePicker: View {
     @Binding var selectedDate: Date
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @Environment(\.colorScheme) var colorScheme
     @State private var showingPicker = false
     

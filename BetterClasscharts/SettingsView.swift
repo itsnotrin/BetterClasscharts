@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.loginState) var loginState
     @State private var showingLogoutAlert = false
@@ -11,7 +12,7 @@ struct SettingsView: View {
             Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Large Title
+                // Title
                 Text("Settings")
                     .font(.largeTitle.bold())
                     .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
@@ -20,7 +21,6 @@ struct SettingsView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 10)
                 
-                // Rest of the view
                 VStack(spacing: 20) {
                     // Theme Section
                     VStack(alignment: .leading, spacing: 8) {
@@ -45,6 +45,33 @@ struct SettingsView: View {
                         .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
                         .cornerRadius(12)
                         .padding(.horizontal)
+                        
+                        // Catppuccin Variant Selector (only show when Catppuccin is selected)
+                        if appTheme == .catppuccin {
+                            HStack(spacing: 0) {
+                                ForEach(CatppuccinVariant.allCases, id: \.self) { variant in
+                                    Button(action: { catppuccinVariant = variant }) {
+                                        Text(variant.rawValue)
+                                            .font(.subheadline)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            .background(
+                                                catppuccinVariant == variant ?
+                                                Theme.accentColor(for: appTheme) :
+                                                Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
+                                            )
+                                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                                    }
+                                    if variant != CatppuccinVariant.allCases.last {
+                                        Divider()
+                                            .background(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.2))
+                                    }
+                                }
+                            }
+                            .frame(height: 44)
+                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
                     }
                     
                     // Version Info Section

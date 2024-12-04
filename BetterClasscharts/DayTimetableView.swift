@@ -4,7 +4,8 @@ struct DayTimetableView: View {
     let day: String
     let lessons: [Lesson]
     @Binding var selectedDay: String?
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @Environment(\.colorScheme) var colorScheme
     
     // Define the period time ranges

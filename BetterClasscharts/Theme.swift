@@ -7,10 +7,19 @@ enum AppTheme: String, CaseIterable {
     case light = "Light"
     case dark = "Dark"
     case dracula = "Dracula"
-    case catppuccinLatte = "Catppuccin Latte"
-    case catppuccinFrappe = "Catppuccin Frappé"
-    case catppuccinMacchiato = "Catppuccin Macchiato"
-    case catppuccinMocha = "Catppuccin Mocha"
+    case gruvboxLight = "Gruvbox Light"
+    case gruvboxDark = "Gruvbox Dark"
+    case tokyoNight = "Tokyo Night"
+    case synthwave = "Synthwave '84"
+    case rosePine = "Rosé Pine"
+    case catppuccin = "Catppuccin"
+}
+
+enum CatppuccinVariant: String, CaseIterable {
+    case latte = "Latte"
+    case frappe = "Frappé"
+    case macchiato = "Macchiato"
+    case mocha = "Mocha"
 }
 
 enum Theme {
@@ -23,6 +32,24 @@ enum Theme {
     static let draculaGreen = Color(hex: "50fa7b")
     static let draculaPink = Color(hex: "ff79c6")
     static let draculaRed = Color(hex: "ff5555")
+
+    // Gruvbox Dark colors
+    static let gruvboxDarkBase = Color(hex: "282828")
+    static let gruvboxDarkText = Color(hex: "ebdbb2")
+    static let gruvboxDarkSubtext0 = Color(hex: "928374")
+    static let gruvboxDarkSurface0 = Color(hex: "3c3836")
+    static let gruvboxDarkMauve = Color(hex: "d3869b")  // Pink in Gruvbox
+    static let gruvboxDarkGreen = Color(hex: "b8bb26")
+    static let gruvboxDarkRed = Color(hex: "fb4934")
+
+    // Gruvbox Light colors
+    static let gruvboxLightBase = Color(hex: "fbf1c7")
+    static let gruvboxLightText = Color(hex: "3c3836")
+    static let gruvboxLightSubtext0 = Color(hex: "928374")
+    static let gruvboxLightSurface0 = Color(hex: "ebdbb2")
+    static let gruvboxLightMauve = Color(hex: "b16286")  // Pink in Gruvbox
+    static let gruvboxLightGreen = Color(hex: "98971a")
+    static let gruvboxLightRed = Color(hex: "cc241d")
 
     // Catppuccin Latte colors
     static let latteBase = Color(hex: "eff1f5")
@@ -77,14 +104,49 @@ enum Theme {
     static let mochaSurface0 = Color(hex: "313244")
     static let mochaMauve = Color(hex: "cba6f7")
 
+    // Tokyo Night colors
+    static let tokyoNightBase = Color(hex: "1a1b26")
+    static let tokyoNightText = Color(hex: "a9b1d6")
+    static let tokyoNightSubtext0 = Color(hex: "565f89")
+    static let tokyoNightSurface0 = Color(hex: "24283b")
+    static let tokyoNightMauve = Color(hex: "bb9af7")  // Purple in Tokyo Night
+    static let tokyoNightGreen = Color(hex: "9ece6a")
+    static let tokyoNightRed = Color(hex: "f7768e")
+
+    // Synthwave colors
+    static let synthwaveBase = Color(hex: "262335")
+    static let synthwaveText = Color(hex: "ff7edb")
+    static let synthwaveSubtext0 = Color(hex: "848bbd")
+    static let synthwaveSurface0 = Color(hex: "241b2f")
+    static let synthwaveMauve = Color(hex: "b381c5")  // Purple in Synthwave
+    static let synthwaveGreen = Color(hex: "72f1b8")
+    static let synthwaveRed = Color(hex: "fe4450")
+
+    // Rosé Pine colors
+    static let rosePineBase = Color(hex: "191724")
+    static let rosePineText = Color(hex: "e0def4")
+    static let rosePineSubtext0 = Color(hex: "908caa")
+    static let rosePineSurface0 = Color(hex: "1f1d2e")
+    static let rosePineMauve = Color(hex: "c4a7e7")  // Purple in Rosé Pine
+    static let rosePineGreen = Color(hex: "9ccfd8")
+    static let rosePineRed = Color(hex: "eb6f92")
+
     // Update the theme functions to include all variants
     static func backgroundColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .tokyoNight: return tokyoNightBase
+        case .synthwave: return synthwaveBase
+        case .rosePine: return rosePineBase
+        case .gruvboxDark: return gruvboxDarkBase
+        case .gruvboxLight: return gruvboxLightBase
         case .dracula: return draculaBase
-        case .catppuccinLatte: return latteBase
-        case .catppuccinFrappe: return frappeBase
-        case .catppuccinMacchiato: return base
-        case .catppuccinMocha: return mochaBase
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte: return latteBase
+            case .frappe: return frappeBase
+            case .macchiato: return base
+            case .mocha: return mochaBase
+            }
         case .light: return .white
         case .dark: return Color(uiColor: .systemBackground)
         }
@@ -92,11 +154,19 @@ enum Theme {
 
     static func textColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .tokyoNight: return tokyoNightText
+        case .synthwave: return synthwaveText
+        case .rosePine: return rosePineText
+        case .gruvboxDark: return gruvboxDarkText
+        case .gruvboxLight: return gruvboxLightText
         case .dracula: return draculaText
-        case .catppuccinLatte: return latteText
-        case .catppuccinFrappe: return frappeText
-        case .catppuccinMacchiato: return text
-        case .catppuccinMocha: return mochaText
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte: return latteText
+            case .frappe: return frappeText
+            case .macchiato: return text
+            case .mocha: return mochaText
+            }
         case .light: return Color(hex: "1e2030")
         case .dark: return .white
         }
@@ -104,11 +174,19 @@ enum Theme {
 
     static func surfaceColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .tokyoNight: return tokyoNightSurface0
+        case .synthwave: return synthwaveSurface0
+        case .rosePine: return rosePineSurface0
+        case .gruvboxDark: return gruvboxDarkSurface0
+        case .gruvboxLight: return gruvboxLightSurface0
         case .dracula: return draculaSurface0
-        case .catppuccinLatte: return latteSurface0
-        case .catppuccinFrappe: return frappeSurface0
-        case .catppuccinMacchiato: return surface0
-        case .catppuccinMocha: return mochaSurface0
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte: return latteSurface0
+            case .frappe: return frappeSurface0
+            case .macchiato: return surface0
+            case .mocha: return mochaSurface0
+            }
         case .light: return Color(hex: "f0f0f5")
         case .dark: return Color(uiColor: .systemGray5)
         }
@@ -116,11 +194,19 @@ enum Theme {
 
     static func accentColor(for theme: AppTheme) -> Color {
         switch theme {
+        case .tokyoNight: return tokyoNightMauve
+        case .synthwave: return synthwaveMauve
+        case .rosePine: return rosePineMauve
+        case .gruvboxDark: return gruvboxDarkMauve
+        case .gruvboxLight: return gruvboxLightMauve
         case .dracula: return draculaMauve
-        case .catppuccinLatte: return latteMauve
-        case .catppuccinFrappe: return frappeMauve
-        case .catppuccinMacchiato: return mauve
-        case .catppuccinMocha: return mochaMauve
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte: return latteMauve
+            case .frappe: return frappeMauve
+            case .macchiato: return mauve
+            case .mocha: return mochaMauve
+            }
         case .light: return Color(hex: "2563eb")
         case .dark: return .blue
         }
@@ -128,11 +214,19 @@ enum Theme {
 
     static func secondaryTextColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .tokyoNight: return tokyoNightSubtext0
+        case .synthwave: return synthwaveSubtext0
+        case .rosePine: return rosePineSubtext0
+        case .gruvboxDark: return gruvboxDarkSubtext0
+        case .gruvboxLight: return gruvboxLightSubtext0
         case .dracula: return draculaSubtext0
-        case .catppuccinLatte: return latteSubtext0
-        case .catppuccinFrappe: return frappeSubtext0
-        case .catppuccinMacchiato: return subtext0
-        case .catppuccinMocha: return mochaSubtext0
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte: return latteSubtext0
+            case .frappe: return frappeSubtext0
+            case .macchiato: return subtext0
+            case .mocha: return mochaSubtext0
+            }
         case .light: return Color(hex: "64748b")
         case .dark: return Color.white.opacity(0.7)
         }
@@ -174,7 +268,7 @@ extension View {
 
 struct NavigationBarTitleColor: ViewModifier {
     let color: Color
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
     
     func body(content: Content) -> some View {
@@ -182,14 +276,21 @@ struct NavigationBarTitleColor: ViewModifier {
             .toolbarColorScheme(isDarkTheme ? .dark : nil, for: .navigationBar)
             .toolbarBackground(Theme.backgroundColor(for: appTheme, colorScheme: colorScheme), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .tint(appTheme == .catppuccinLatte || appTheme == .light ? Theme.textColor(for: appTheme, colorScheme: colorScheme) : color)
+            .tint(appTheme == .catppuccin ? Theme.textColor(for: appTheme, colorScheme: colorScheme) : color)
     }
     
     private var isDarkTheme: Bool {
         switch appTheme {
-        case .catppuccinLatte, .light:
+        case .light, .gruvboxLight:
             return false
-        case .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha, .dark:
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte:
+                return false
+            case .frappe, .macchiato, .mocha:
+                return true
+            }
+        case .dracula, .gruvboxDark, .tokyoNight, .synthwave, .rosePine, .dark:
             return true
         }
     }

@@ -2,7 +2,8 @@ import SwiftUI
 
 struct MainTabView: View {
     let studentName: String
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
+    @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @State private var refreshTimer: Timer?
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
@@ -81,9 +82,16 @@ struct MainTabView: View {
     
     private func getPreferredColorScheme() -> ColorScheme? {
         switch appTheme {
-        case .light, .catppuccinLatte:
+        case .light, .gruvboxLight:
             return .light
-        case .dark, .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
+        case .catppuccin:
+            switch UserDefaults.standard.string(forKey: "catppuccinVariant").flatMap(CatppuccinVariant.init) ?? .macchiato {
+            case .latte:
+                return .light
+            case .frappe, .macchiato, .mocha:
+                return .dark
+            }
+        case .dracula, .gruvboxDark, .tokyoNight, .synthwave, .rosePine, .dark:
             return .dark
         }
     }
@@ -93,7 +101,7 @@ struct HomeworkView: View {
     @State private var homeworkTasks: [HomeworkTask] = []
     @State private var isLoadingHomework = false
     @State private var homeworkError: String?
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -176,7 +184,7 @@ struct TimetableView: View {
     @State private var selectedDay: String?
     @State private var lessons: [Lesson] = []
     @State private var isLoadingLessons = false
-    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccinMacchiato
+    @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
     
     private func isCurrentDay(_ day: String) -> Bool {
