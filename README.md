@@ -63,9 +63,16 @@ A modern, native iOS client for ClassCharts with multiple theme options.
 
 ## Installation
 
+### Option 1: Build from Source
 1. Clone the repository
 2. Open in Xcode
 3. Build and run on your iOS device or simulator
+
+### Option 2: Install Pre-built IPA
+1. Download the latest IPA from the [Releases](../../releases) page
+2. Install using AltStore, Sideloadly, or similar sideloading tool
+3. Trust the app in Settings > General > Device Management
+4. Note: You'll need to reinstall every 7 days due to free development limitations
 
 ## Usage
 

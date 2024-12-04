@@ -1,0 +1,58 @@
+name: Build and Release iOS App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode.app
+      
+    - name: Build Archive
+      run: |
+        xcodebuild archive \
+          -scheme BetterClasscharts \
+          -archivePath $RUNNER_TEMP/BetterClasscharts.xcarchive \
+          -sdk iphoneos \
+          -configuration Release \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+          
+    - name: Create IPA
+      run: |
+        cd $RUNNER_TEMP/BetterClasscharts.xcarchive/Products/Applications
+        mkdir Payload
+        cp -r BetterClasscharts.app Payload
+        zip -r BetterClasscharts.ipa Payload
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: alpha-${{ github.run_number }}
+        release_name: Alpha Build ${{ github.run_number }}
+        body: |
+          Alpha build generated from commit ${{ github.sha }}
+          
+          **Note**: This is an unsigned build. You'll need to use AltStore or similar to install it.
+        draft: false
+        prerelease: true
+        
+    - name: Upload IPA
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ runner.temp }}/BetterClasscharts.xcarchive/Products/Applications/BetterClasscharts.ipa
+        asset_name: BetterClasscharts.ipa
+        asset_content_type: application/octet-stream 
