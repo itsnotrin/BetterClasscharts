@@ -166,7 +166,7 @@ struct ContentView: View {
         switch appTheme {
         case .light, .catppuccinLatte:
             return .light
-        case .dark, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
+        case .dark, .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
             return .dark
         }
     }

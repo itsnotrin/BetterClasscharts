@@ -81,14 +81,10 @@ struct MainTabView: View {
     
     private func getPreferredColorScheme() -> ColorScheme? {
         switch appTheme {
-        case .light:
+        case .light, .catppuccinLatte:
             return .light
-        case .dark:
+        case .dark, .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
             return .dark
-        case .catppuccinLatte:
-            return .light  // Latte is a light theme
-        case .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha:
-            return .dark  // These are all dark themes
         }
     }
 }

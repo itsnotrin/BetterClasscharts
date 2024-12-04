@@ -6,6 +6,7 @@ import UIKit
 enum AppTheme: String, CaseIterable {
     case light = "Light"
     case dark = "Dark"
+    case dracula = "Dracula"
     case catppuccinLatte = "Catppuccin Latte"
     case catppuccinFrappe = "Catppuccin Frappé"
     case catppuccinMacchiato = "Catppuccin Macchiato"
@@ -13,6 +14,16 @@ enum AppTheme: String, CaseIterable {
 }
 
 enum Theme {
+    // Dracula colors
+    static let draculaBase = Color(hex: "282a36")
+    static let draculaText = Color(hex: "f8f8f2")
+    static let draculaSubtext0 = Color(hex: "6272a4")
+    static let draculaSurface0 = Color(hex: "44475a")
+    static let draculaMauve = Color(hex: "bd93f9")  // Purple in Dracula
+    static let draculaGreen = Color(hex: "50fa7b")
+    static let draculaPink = Color(hex: "ff79c6")
+    static let draculaRed = Color(hex: "ff5555")
+
     // Catppuccin Latte colors
     static let latteBase = Color(hex: "eff1f5")
     static let latteText = Color(hex: "4c4f69")
@@ -69,6 +80,7 @@ enum Theme {
     // Update the theme functions to include all variants
     static func backgroundColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .dracula: return draculaBase
         case .catppuccinLatte: return latteBase
         case .catppuccinFrappe: return frappeBase
         case .catppuccinMacchiato: return base
@@ -80,6 +92,7 @@ enum Theme {
 
     static func textColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .dracula: return draculaText
         case .catppuccinLatte: return latteText
         case .catppuccinFrappe: return frappeText
         case .catppuccinMacchiato: return text
@@ -91,6 +104,7 @@ enum Theme {
 
     static func surfaceColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .dracula: return draculaSurface0
         case .catppuccinLatte: return latteSurface0
         case .catppuccinFrappe: return frappeSurface0
         case .catppuccinMacchiato: return surface0
@@ -102,6 +116,7 @@ enum Theme {
 
     static func accentColor(for theme: AppTheme) -> Color {
         switch theme {
+        case .dracula: return draculaMauve
         case .catppuccinLatte: return latteMauve
         case .catppuccinFrappe: return frappeMauve
         case .catppuccinMacchiato: return mauve
@@ -113,6 +128,7 @@ enum Theme {
 
     static func secondaryTextColor(for theme: AppTheme, colorScheme: ColorScheme) -> Color {
         switch theme {
+        case .dracula: return draculaSubtext0
         case .catppuccinLatte: return latteSubtext0
         case .catppuccinFrappe: return frappeSubtext0
         case .catppuccinMacchiato: return subtext0
@@ -173,7 +189,7 @@ struct NavigationBarTitleColor: ViewModifier {
         switch appTheme {
         case .catppuccinLatte, .light:
             return false
-        case .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha, .dark:
+        case .dracula, .catppuccinFrappe, .catppuccinMacchiato, .catppuccinMocha, .dark:
             return true
         }
     }
