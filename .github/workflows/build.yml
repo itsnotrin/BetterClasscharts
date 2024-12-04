@@ -16,35 +16,50 @@ jobs:
       with:
         xcode-version: '15.2'
     
-    - name: List directory contents
+    - name: Install XcodeGen
+      run: brew install xcodegen
+    
+    - name: Generate Fresh Xcode Project
       run: |
-        ls -la
-        find . -name "*.xcodeproj" -o -name "*.xcworkspace"
+        # Remove the corrupted project file
+        rm -rf BetterClasscharts.xcodeproj
+        
+        # Create project.yml
+        cat > project.yml << EOL
+        name: BetterClasscharts
+        options:
+          bundleIdPrefix: com.betterclasscharts
+        targets:
+          BetterClasscharts:
+            type: application
+            platform: iOS
+            sources: [BetterClasscharts]
+            settings:
+              base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.betterclasscharts.app
+            info:
+              path: BetterClasscharts/Info.plist
+              properties:
+                UILaunchStoryboardName: LaunchScreen
+                UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+                UIApplicationSceneManifest:
+                  UIApplicationSupportsMultipleScenes: false
+        EOL
+        
+        # Generate new project
+        xcodegen generate
     
     - name: Build Archive
       run: |
-        # Try workspace first if it exists
-        if [ -d "BetterClasscharts.xcworkspace" ]; then
-          xcodebuild archive \
-            -workspace BetterClasscharts.xcworkspace \
-            -scheme BetterClasscharts \
-            -archivePath $RUNNER_TEMP/BetterClasscharts.xcarchive \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-        else
-          xcodebuild archive \
-            -project BetterClasscharts.xcodeproj \
-            -scheme BetterClasscharts \
-            -archivePath $RUNNER_TEMP/BetterClasscharts.xcarchive \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
-        fi
+        xcodebuild archive \
+          -project BetterClasscharts.xcodeproj \
+          -scheme BetterClasscharts \
+          -archivePath $RUNNER_TEMP/BetterClasscharts.xcarchive \
+          -sdk iphoneos \
+          -configuration Release \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
           
     - name: Create IPA
       run: |
