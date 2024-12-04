@@ -42,6 +42,11 @@ A modern, native iOS client for ClassCharts with multiple theme options.
 </details>
 
 <details>
+<summary>Timetable Day View</summary>
+<img src="Screenshots/timetable_day.png" alt="Timetable Day View">
+</details>
+
+<details>
 <summary>Settings</summary>
 <img src="Screenshots/settings.png" alt="Settings">
 </details>
@@ -49,6 +54,11 @@ A modern, native iOS client for ClassCharts with multiple theme options.
 <details>
 <summary>Theme Selection</summary>
 <img src="Screenshots/themes.png" alt="Theme Selection">
+</details>
+
+<details>
+<summary>Catppuccin Theme Settings</summary>
+<img src="Screenshots/catppuccin.png" alt="Catppuccin Theme Settings">
 </details>
 
 ## Installation
