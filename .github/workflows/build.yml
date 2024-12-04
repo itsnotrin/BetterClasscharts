@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v4
@@ -69,26 +71,13 @@ jobs:
         zip -r BetterClasscharts.ipa Payload
         
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: alpha-${{ github.run_number }}
-        release_name: Alpha Build ${{ github.run_number }}
+        name: Alpha Build ${{ github.run_number }}
         body: |
           Alpha build generated from commit ${{ github.sha }}
           
           **Note**: This is an unsigned build. You'll need to use AltStore or similar to install it.
-        draft: false
+        files: ${{ runner.temp }}/BetterClasscharts.xcarchive/Products/Applications/BetterClasscharts.ipa
         prerelease: true
-        
-    - name: Upload IPA
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ runner.temp }}/BetterClasscharts.xcarchive/Products/Applications/BetterClasscharts.ipa
-        asset_name: BetterClasscharts.ipa
-        asset_content_type: application/octet-stream 
