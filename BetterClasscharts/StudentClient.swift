@@ -337,12 +337,12 @@ class StudentClient {
                             switch result {
                             case .success(let homeworks):
                                 let tasks = homeworks.compactMap { homework -> HomeworkTask? in
-                                    guard let id = homework["id"] as? Int,
-                                          let title = homework["title"] as? String,
+                                    guard let title = homework["title"] as? String,
+                                          let status = homework["status"] as? [String: Any],
+                                          let id = status["id"] as? Int,
                                           let subject = homework["subject"] as? String,
                                           let dueDateString = homework["due_date"] as? String,
                                           let description = homework["description"] as? String,
-                                          let status = homework["status"] as? [String: Any],
                                           let completed = status["ticked"] as? String else {
                                         return nil
                                     }
@@ -394,7 +394,6 @@ class StudentClient {
                     var request = URLRequest(url: url)
                     request.httpMethod = "GET"
                     request.setValue("Basic \(sessionId)", forHTTPHeaderField: "Authorization")
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     
                     let task = URLSession.shared.dataTask(with: request) { data, response, error in
                         if let error = error {
@@ -408,8 +407,7 @@ class StudentClient {
                         }
                         
                         if httpResponse.statusCode == 200 {
-                            let newState = !completed
-                            completion(.success(newState))
+                            completion(.success(!completed))
                         } else {
                             completion(.failure(NetworkError.serverError(httpResponse.statusCode)))
                         }
