@@ -39,8 +39,9 @@ jobs:
             settings:
               base:
                 PRODUCT_BUNDLE_IDENTIFIER: com.betterclasscharts.app
-                SUPPORTED_PLATFORMS: "iphoneos iphonesimulator macosx"
                 SUPPORTS_MACCATALYST: YES
+                DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: YES
+                SUPPORTS_MAC_DESIGNED_FOR_IPAD: YES
             info:
               path: BetterClasscharts/Info.plist
               properties:
@@ -78,7 +79,7 @@ jobs:
           -project BetterClasscharts.xcodeproj \
           -scheme BetterClasscharts \
           -archivePath $RUNNER_TEMP/BetterClasscharts-Mac.xcarchive \
-          -destination 'platform=macOS,arch=arm64' \
+          -destination 'platform=macOS,variant=Mac Catalyst,arch=arm64' \
           -configuration Release \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
