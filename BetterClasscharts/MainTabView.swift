@@ -236,6 +236,10 @@ struct TimetableView: View {
                                     Group {
                                         if isCurrentDay(day) {
                                             Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .stroke(Color.purple, lineWidth: 3)
+                                                )
                                         } else {
                                             selectedDay == day ? Theme.accentColor(for: appTheme) : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
                                         }

@@ -263,22 +263,25 @@ class StudentClient {
         request: @escaping (@escaping (Result<T, Error>) -> Void) -> Void
     ) {
         request { result in
-            if case .failure(let error) = result,
-               let networkError = error as? NetworkError,
-               networkError == .sessionExpired {
-                // Session expired, refresh and retry once
-                checkAndRefreshSession { refreshResult in
-                    switch refreshResult {
-                    case .success:
-                        // Token refreshed, retry the original request
-                        request(completion)
-                    case .failure(let refreshError):
-                        // Token refresh failed, return the error
-                        completion(.failure(refreshError))
+            if case .failure(let error) = result {
+                if let networkError = error as? NetworkError,
+                   (networkError == .sessionExpired || networkError == .missingUserData) {
+                    // Session expired or missing user data, refresh and retry once
+                    checkAndRefreshSession { refreshResult in
+                        switch refreshResult {
+                        case .success:
+                            // Token refreshed, retry the original request
+                            request(completion)
+                        case .failure(let refreshError):
+                            // Token refresh failed, return the error
+                            completion(.failure(refreshError))
+                        }
                     }
+                } else {
+                    // Not a session expiration or second attempt, return the result
+                    completion(result)
                 }
             } else {
-                // Not a session expiration or second attempt, return the result
                 completion(result)
             }
         }
