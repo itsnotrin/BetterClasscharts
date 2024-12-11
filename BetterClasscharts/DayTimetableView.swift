@@ -7,6 +7,8 @@ struct DayTimetableView: View {
     @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @AppStorage("catppuccinVariant") private var catppuccinVariant: CatppuccinVariant = .macchiato
     @Environment(\.colorScheme) var colorScheme
+    @State private var currentTime = Date()
+    let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
     // Define the period time ranges
     private let periodTimes: [(start: String, end: String, number: Int)] = [
@@ -49,6 +51,44 @@ struct DayTimetableView: View {
         }
         
         return "Unknown Period"
+    }
+    
+    private func isCurrentLesson(_ lesson: Lesson) -> Bool {
+        guard let startTime = formatTimeToDate(from: lesson.startTime),
+              let endTime = formatTimeToDate(from: lesson.endTime) else {
+            return false
+        }
+        return currentTime >= startTime && currentTime <= endTime
+    }
+    
+    private func lessonProgress(_ lesson: Lesson) -> Double {
+        guard let startTime = formatTimeToDate(from: lesson.startTime),
+              let endTime = formatTimeToDate(from: lesson.endTime) else {
+            return 0
+        }
+        
+        let totalDuration = endTime.timeIntervalSince(startTime)
+        let elapsed = currentTime.timeIntervalSince(startTime)
+        return min(max(elapsed / totalDuration, 0), 1)
+    }
+    
+    private func formatTimeToDate(from dateTimeString: String) -> Date? {
+        let dateFormatter = ISO8601DateFormatter()
+        return dateFormatter.date(from: dateTimeString)
+    }
+    
+    private func isCurrentDay(_ day: String) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.component(.weekday, from: Date())
+        
+        switch today {
+        case 2: return day == "Monday"
+        case 3: return day == "Tuesday"
+        case 4: return day == "Wednesday"
+        case 5: return day == "Thursday"
+        case 6: return day == "Friday"
+        default: return false
+        }
     }
     
     var body: some View {
@@ -100,10 +140,30 @@ struct DayTimetableView: View {
                                 }
                                 .font(.subheadline)
                                 .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
+                                
+                                // Progress bar for current lesson
+                                if isCurrentLesson(lesson) {
+                                    GeometryReader { geometry in
+                                        ZStack(alignment: .leading) {
+                                            Rectangle()
+                                                .fill(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.1))
+                                                .frame(height: 4)
+                                            
+                                            Rectangle()
+                                                .fill(Theme.accentColor(for: appTheme))
+                                                .frame(width: geometry.size.width * lessonProgress(lesson), height: 4)
+                                        }
+                                    }
+                                    .frame(height: 4)
+                                    .padding(.top, 8)
+                                }
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
+                            .background(
+                                Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
+                                    .opacity(isCurrentDay(day) ? 1 : 0.7)
+                            )
                             .cornerRadius(8)
                             .shadow(color: Theme.crust.opacity(0.1), radius: 5, x: 0, y: 2)
                         }
@@ -111,6 +171,9 @@ struct DayTimetableView: View {
                     }
                 }
             }
+        }
+        .onReceive(timer) { _ in
+            currentTime = Date()
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
