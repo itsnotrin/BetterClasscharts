@@ -191,13 +191,21 @@ class StudentClient {
             return
         }
         
-        // Check if we need to ping (3 minutes passed)
-        if let lastPing = lastPing,
-           Date().timeIntervalSince(lastPing) < ClassChartsAPI.PING_INTERVAL {
-            completion(.success(()))
+        // Always ping if we don't have a last ping time
+        guard let lastPingTime = lastPing else {
+            performPing(sessionId: sessionId, completion: completion)
             return
         }
         
+        // Refresh if more than 30 seconds have passed
+        if Date().timeIntervalSince(lastPingTime) >= 30 {
+            performPing(sessionId: sessionId, completion: completion)
+        } else {
+            completion(.success(()))
+        }
+    }
+    
+    private static func performPing(sessionId: String, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let url = URL(string: "\(ClassChartsAPI.API_BASE_STUDENT)/ping") else {
             completion(.failure(NetworkError.invalidURL))
             return
@@ -213,29 +221,43 @@ class StudentClient {
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
+                lastPing = nil  // Clear last ping on network error
                 completion(.failure(error))
                 return
             }
             
             guard let httpResponse = response as? HTTPURLResponse else {
+                lastPing = nil
                 completion(.failure(NetworkError.invalidResponse))
                 return
             }
             
-            if httpResponse.statusCode == 200 {
-                if let data = data,
-                   let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let meta = json["meta"] as? [String: Any],
-                   let newSessionId = meta["session_id"] as? String {
-                    currentSessionId = newSessionId
-                    lastPing = Date()
-                    completion(.success(()))
-                } else {
-                    completion(.failure(NetworkError.missingUserData))
+            if httpResponse.statusCode == 200, let data = data {
+                do {
+                    // Try to parse the response
+                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                        // If we have a new session ID, use it
+                        if let meta = json["meta"] as? [String: Any],
+                           let newSessionId = meta["session_id"] as? String {
+                            currentSessionId = newSessionId
+                        }
+                        
+                        // Consider the ping successful if we got a 200 response with valid JSON
+                        lastPing = Date()
+                        completion(.success(()))
+                        return
+                    }
+                } catch {
+                    // JSON parsing failed
+                    lastPing = nil
+                    completion(.failure(NetworkError.sessionExpired))
+                    return
                 }
-            } else {
-                completion(.failure(NetworkError.serverError(httpResponse.statusCode)))
             }
+            
+            // If we get here, something went wrong
+            lastPing = nil
+            completion(.failure(NetworkError.serverError(httpResponse.statusCode)))
         }
         task.resume()
     }
@@ -262,47 +284,79 @@ class StudentClient {
         completion: @escaping (Result<T, Error>) -> Void,
         request: @escaping (@escaping (Result<T, Error>) -> Void) -> Void
     ) {
-        request { result in
-            if case .failure(let error) = result {
-                if let networkError = error as? NetworkError,
-                   (networkError == .sessionExpired || networkError == .missingUserData) {
-                    // Session expired or missing user data, refresh and retry once
-                    checkAndRefreshSession { refreshResult in
-                        switch refreshResult {
-                        case .success:
-                            // Token refreshed, retry the original request
-                            request(completion)
-                        case .failure(let refreshError):
-                            // Token refresh failed, return the error
-                            completion(.failure(refreshError))
+        // Clear lastPing to force a fresh session check
+        lastPing = nil
+        
+        // First try to refresh the session
+        checkAndRefreshSession { refreshResult in
+            switch refreshResult {
+            case .success:
+                // Session is fresh, make the request
+                request { result in
+                    if case .failure(let error) = result {
+                        if let networkError = error as? NetworkError,
+                           (networkError == .sessionExpired || networkError == .missingUserData) {
+                            // If the request still failed, try one more time with another fresh session
+                            lastPing = nil
+                            checkAndRefreshSession { secondRefreshResult in
+                                switch secondRefreshResult {
+                                case .success:
+                                    // One final attempt with the fresh session
+                                    request(completion)
+                                case .failure(let refreshError):
+                                    completion(.failure(refreshError))
+                                }
+                            }
+                        } else {
+                            // Not a session issue, return the error
+                            completion(result)
                         }
+                    } else {
+                        // Request succeeded
+                        completion(result)
                     }
-                } else {
-                    // Not a session expiration or second attempt, return the result
-                    completion(result)
                 }
-            } else {
-                completion(result)
+            case .failure(let error):
+                // Initial session refresh failed
+                completion(.failure(error))
             }
         }
     }
     
     private static func handleResponse(data: Data, completion: @escaping (Result<[[String: Any]], Error>) -> Void) {
         do {
-            // First try to parse as error response
-            if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-               let success = json["success"] as? Int,
-               let expired = json["expired"] as? Int,
-               success == 0 && expired == 1 {
+            // Try to parse as JSON and throw if it fails
+            guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
                 completion(.failure(NetworkError.sessionExpired))
                 return
             }
             
-            // Parse the response
-            let responseData = try JSONParser.parseResponse(data)
-            completion(.success(responseData))
+            // Check for various session expiration indicators
+            if let success = json["success"] as? Int,
+               success == 0 {
+                // Check if explicitly marked as expired
+                if let expired = json["expired"] as? Int, expired == 1 {
+                    completion(.failure(NetworkError.sessionExpired))
+                    return
+                }
+                // Check for missing user data which often indicates session issues
+                if json["data"] == nil {
+                    completion(.failure(NetworkError.sessionExpired))
+                    return
+                }
+            }
+            
+            // If we have valid data, return it
+            if let responseData = json["data"] as? [[String: Any]] {
+                completion(.success(responseData))
+                return
+            }
+            
+            // If we get here, we couldn't get valid data
+            completion(.failure(NetworkError.sessionExpired))
         } catch {
-            completion(.failure(error))
+            // Now this catch block will handle JSON parsing errors
+            completion(.failure(NetworkError.sessionExpired))
         }
     }
     
