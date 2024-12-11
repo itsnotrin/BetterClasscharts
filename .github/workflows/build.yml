@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-ios:
     runs-on: macos-latest
     permissions:
       contents: write
@@ -39,6 +39,8 @@ jobs:
             settings:
               base:
                 PRODUCT_BUNDLE_IDENTIFIER: com.betterclasscharts.app
+                SUPPORTED_PLATFORMS: "iphoneos iphonesimulator macosx"
+                SUPPORTS_MACCATALYST: YES
             info:
               path: BetterClasscharts/Info.plist
               properties:
@@ -51,7 +53,7 @@ jobs:
         # Generate new project
         xcodegen generate
     
-    - name: Build Archive
+    - name: Build iOS Archive
       run: |
         xcodebuild archive \
           -project BetterClasscharts.xcodeproj \
@@ -69,6 +71,23 @@ jobs:
         mkdir Payload
         cp -r BetterClasscharts.app Payload
         zip -r BetterClasscharts.ipa Payload
+
+    - name: Build Mac Archive
+      run: |
+        xcodebuild archive \
+          -project BetterClasscharts.xcodeproj \
+          -scheme BetterClasscharts \
+          -archivePath $RUNNER_TEMP/BetterClasscharts-Mac.xcarchive \
+          -destination 'platform=macOS,arch=arm64' \
+          -configuration Release \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Create Mac App Bundle
+      run: |
+        cd $RUNNER_TEMP/BetterClasscharts-Mac.xcarchive/Products/Applications
+        zip -r BetterClasscharts-Mac.zip BetterClasscharts.app
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -78,6 +97,9 @@ jobs:
         body: |
           Alpha build generated from commit ${{ github.sha }}
           
-          **Note**: This is an unsigned build. You'll need to use AltStore or similar to install it.
-        files: ${{ runner.temp }}/BetterClasscharts.xcarchive/Products/Applications/BetterClasscharts.ipa
+          **iOS Build**: Unsigned IPA. You'll need to use AltStore or similar to install it.
+          **Mac Build**: Experimental Apple Silicon build. Unsigned app bundle.
+        files: |
+          ${{ runner.temp }}/BetterClasscharts.xcarchive/Products/Applications/BetterClasscharts.ipa
+          ${{ runner.temp }}/BetterClasscharts-Mac.xcarchive/Products/Applications/BetterClasscharts-Mac.zip
         prerelease: true
