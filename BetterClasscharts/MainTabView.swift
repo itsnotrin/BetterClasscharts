@@ -184,14 +184,15 @@ struct TimetableView: View {
     @State private var selectedDay: String?
     @State private var lessons: [Lesson] = []
     @State private var isLoadingLessons = false
+    @State private var selectedDate = Date()
+    @State private var showingDatePicker = false
     @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
     
     private func getDateForDay(_ day: String) -> Date? {
         let calendar = Calendar.current
-        let today = Date()
         
-        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)
         components.weekday = 2  // Monday is 2 in Calendar
         guard let monday = calendar.date(from: components) else { return nil }
         
@@ -216,10 +217,21 @@ struct TimetableView: View {
     
     private func isCurrentDay(_ day: String) -> Bool {
         let calendar = Calendar.current
-        let today = calendar.component(.weekday, from: Date())
+        let today = Date()
         
-        // Convert weekday to our day format
-        switch today {
+        // First check if we're in the current week
+        let todayComponents = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        let selectedComponents = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)
+        
+        guard todayComponents.yearForWeekOfYear == selectedComponents.yearForWeekOfYear,
+              todayComponents.weekOfYear == selectedComponents.weekOfYear else {
+            return false
+        }
+        
+        // Then check if it's the current day
+        let weekday = calendar.component(.weekday, from: today)
+        
+        switch weekday {
         case 2: return day == "Monday"
         case 3: return day == "Tuesday"
         case 4: return day == "Wednesday"
@@ -229,19 +241,76 @@ struct TimetableView: View {
         }
     }
     
+    private func getWeekLabel() -> String {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)
+        components.weekday = 2 // Monday
+        guard let monday = calendar.date(from: components) else { return "" }
+        
+        components.weekday = 6 // Friday
+        guard let friday = calendar.date(from: components) else { return "" }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        
+        return "\(formatter.string(from: monday)) - \(formatter.string(from: friday))"
+    }
+    
     var body: some View {
         ZStack {
             Theme.backgroundColor(for: appTheme, colorScheme: colorScheme).ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Large Title
-                Text("Timetable")
-                    .font(.largeTitle.bold())
-                    .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                // Large Title and Week Selection
+                VStack(spacing: 8) {
+                    Text("Timetable")
+                        .font(.largeTitle.bold())
+                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Week selector
+                    HStack {
+                        Button(action: {
+                            if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: selectedDate) {
+                                selectedDate = newDate
+                                selectedDay = nil  // Clear selected day
+                                if let monday = getDateForDay("Monday") {
+                                    loadTimetable(for: "Monday", date: monday, shouldSelect: false)
+                                }
+                            }
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                        }
+                        
+                        Button(action: { showingDatePicker = true }) {
+                            Text(getWeekLabel())
+                                .font(.headline)
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                                .frame(maxWidth: .infinity)
+                        }
+                        
+                        Button(action: {
+                            if let newDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: selectedDate) {
+                                selectedDate = newDate
+                                selectedDay = nil  // Clear selected day
+                                if let monday = getDateForDay("Monday") {
+                                    loadTimetable(for: "Monday", date: monday, shouldSelect: false)
+                                }
+                            }
+                        }) {
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                        }
+                    }
+                    .padding(.vertical, 8)
                     .padding(.horizontal)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
+                    .background(Theme.surfaceColor(for: appTheme, colorScheme: colorScheme))
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
                 
                 Spacer()
                 
@@ -285,7 +354,9 @@ struct TimetableView: View {
                             .shadow(color: Theme.crust.opacity(0.2), radius: 5, x: 0, y: 2)
                         }
                         .simultaneousGesture(TapGesture().onEnded {
-                            loadTimetable(for: day)
+                            if let date = getDateForDay(day) {
+                                loadTimetable(for: day, date: date)
+                            }
                         })
                     }
                 }
@@ -294,45 +365,44 @@ struct TimetableView: View {
                 Spacer()
             }
         }
+        .sheet(isPresented: $showingDatePicker) {
+            NavigationStack {
+                DatePicker("Select Week", selection: $selectedDate, displayedComponents: [.date])
+                    .datePickerStyle(.graphical)
+                    .tint(Theme.accentColor(for: appTheme))
+                    .padding()
+                    .onChange(of: selectedDate, initial: false) { oldValue, newValue in
+                        selectedDay = nil  // Clear selected day
+                        if let monday = getDateForDay("Monday") {
+                            loadTimetable(for: "Monday", date: monday, shouldSelect: false)
+                        }
+                    }
+                    .navigationTitle("Select Week")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingDatePicker = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
+        }
     }
     
-    private func loadTimetable(for day: String) {
+    private func loadTimetable(for day: String, date: Date, shouldSelect: Bool = true) {
         isLoadingLessons = true
         
-        let calendar = Calendar.current
-        let today = Date()
-        
-        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
-        components.weekday = 2  // Monday is 2 in Calendar
-        guard let monday = calendar.date(from: components) else {
-            isLoadingLessons = false
-            return
-        }
-        
-        let dayOffset: Int
-        switch day {
-        case "Monday": dayOffset = 0
-        case "Tuesday": dayOffset = 1
-        case "Wednesday": dayOffset = 2
-        case "Thursday": dayOffset = 3
-        case "Friday": dayOffset = 4
-        default:
-            isLoadingLessons = false
-            return
-        }
-        
-        guard let selectedDate = calendar.date(byAdding: .day, value: dayOffset, to: monday) else {
-            isLoadingLessons = false
-            return
-        }
-        
-        StudentClient.fetchTimetable(for: selectedDate) { result in
+        StudentClient.fetchTimetable(for: date) { result in
             DispatchQueue.main.async {
                 isLoadingLessons = false
                 switch result {
                 case .success(let fetchedLessons):
                     lessons = fetchedLessons
-                    selectedDay = day
+                    if shouldSelect {
+                        selectedDay = day
+                    }
                 case .failure:
                     lessons = []
                 }
