@@ -187,6 +187,33 @@ struct TimetableView: View {
     @AppStorage("appTheme") private var appTheme: AppTheme = .catppuccin
     @Environment(\.colorScheme) var colorScheme
     
+    private func getDateForDay(_ day: String) -> Date? {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        components.weekday = 2  // Monday is 2 in Calendar
+        guard let monday = calendar.date(from: components) else { return nil }
+        
+        let dayOffset: Int
+        switch day {
+        case "Monday": dayOffset = 0
+        case "Tuesday": dayOffset = 1
+        case "Wednesday": dayOffset = 2
+        case "Thursday": dayOffset = 3
+        case "Friday": dayOffset = 4
+        default: return nil
+        }
+        
+        return calendar.date(byAdding: .day, value: dayOffset, to: monday)
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM"
+        return formatter.string(from: date)
+    }
+    
     private func isCurrentDay(_ day: String) -> Bool {
         let calendar = Calendar.current
         let today = calendar.component(.weekday, from: Date())
@@ -216,10 +243,9 @@ struct TimetableView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 10)
                 
-                Spacer()  // Add spacer to push content down
+                Spacer()
                 
-                // Rest of the view
-                VStack(spacing: 16) {  // Increased spacing between buttons
+                VStack(spacing: 16) {
                     ForEach(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], id: \.self) { day in
                         NavigationLink {
                             if isLoadingLessons {
@@ -229,25 +255,34 @@ struct TimetableView: View {
                                 DayTimetableView(day: day, lessons: lessons, selectedDay: $selectedDay)
                             }
                         } label: {
-                            Text(day)
-                                .font(.title2)
-                                .frame(maxWidth: .infinity, minHeight: 50)
-                                .background(
-                                    Group {
-                                        if isCurrentDay(day) {
-                                            Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .stroke(Color.purple, lineWidth: 3)
-                                                )
-                                        } else {
-                                            selectedDay == day ? Theme.accentColor(for: appTheme) : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
-                                        }
+                            HStack {
+                                Text(day)
+                                    .font(.title2)
+                                if let date = getDateForDay(day) {
+                                    Text(formatDate(date))
+                                        .font(.title3)
+                                        .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme).opacity(0.7))
+                                }
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .padding(.horizontal)
+                            .background(
+                                Group {
+                                    if isCurrentDay(day) {
+                                        Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.purple, lineWidth: 3)
+                                            )
+                                    } else {
+                                        selectedDay == day ? Theme.accentColor(for: appTheme) : Theme.surfaceColor(for: appTheme, colorScheme: colorScheme)
                                     }
-                                )
-                                .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
-                                .cornerRadius(12)
-                                .shadow(color: Theme.crust.opacity(0.2), radius: 5, x: 0, y: 2)
+                                }
+                            )
+                            .foregroundColor(Theme.textColor(for: appTheme, colorScheme: colorScheme))
+                            .cornerRadius(12)
+                            .shadow(color: Theme.crust.opacity(0.2), radius: 5, x: 0, y: 2)
                         }
                         .simultaneousGesture(TapGesture().onEnded {
                             loadTimetable(for: day)
@@ -256,7 +291,7 @@ struct TimetableView: View {
                 }
                 .padding(.horizontal)
                 
-                Spacer()  // Add spacer at bottom
+                Spacer()
             }
         }
     }
