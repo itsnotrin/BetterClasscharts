@@ -1,3 +1,5 @@
+> **Archive Notice:** Hey there! This project is now **archived** as I've moved on to University and no longer use ClassCharts. While I can't actively maintain or provide support for the app anymore, feel free to fork the project and make it your own! I hope the code can be useful for others interested in building iOS apps in Swift or working with the ClassCharts API. Thanks for all the interest and support!
+
 # BetterClasscharts
 
 A modern, native iOS client for ClassCharts with multiple theme options.
